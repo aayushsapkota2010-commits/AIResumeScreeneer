@@ -1,0 +1,627 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
+
+.upload-page {
+    --up-bg: #F8FAFC;
+    --up-card: #FFFFFF;
+    --up-border: #E2E8F0;
+    --up-primary: #4F46E5;
+    --up-primary-hover: #4338CA;
+    --up-green: #10B981;
+    --up-red: #EF4444;
+    --up-ink: #0F172A;
+    --up-muted: #64748B;
+
+    background: var(--up-bg);
+    min-height: 100%;
+    padding: 40px 32px 64px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--up-ink);
+}
+
+/* Header */
+.upload-header {
+    max-width: 1180px;
+    margin: 0 auto 32px;
+    animation: upload-fade-in 0.4s ease;
+}
+
+.upload-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--up-primary);
+    margin: 0 0 10px;
+}
+
+.upload-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 38px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+}
+
+.upload-subtitle {
+    font-size: 15px;
+    color: var(--up-muted);
+    margin: 0;
+}
+
+/* Grid */
+.upload-grid {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+}
+
+/* Upload card */
+.upload-card {
+    background: var(--up-card);
+    border: 1px solid var(--up-border);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    animation: upload-fade-in 0.45s ease;
+}
+
+/* Dropzone */
+.upload-dropzone {
+    position: relative;
+    border: 1.5px dashed var(--up-border);
+    border-radius: 16px;
+    padding: 44px 24px;
+    text-align: center;
+    cursor: pointer;
+    background: #FBFCFE;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.upload-dropzone:hover {
+    border-color: var(--up-primary);
+    background: #F5F4FF;
+}
+
+.upload-dropzone--active {
+    border-color: var(--up-primary);
+    background: #F0EEFF;
+    transform: scale(1.005);
+}
+
+.upload-dropzone--filled {
+    cursor: default;
+    border-style: solid;
+    background: #FBFCFE;
+}
+
+.upload-dropzone--filled:hover {
+    border-color: var(--up-border);
+    background: #FBFCFE;
+}
+
+.upload-hidden-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-dropzone--filled .upload-hidden-input {
+    display: none;
+}
+
+.upload-dropzone-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(99, 102, 241, 0.08));
+    color: var(--up-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-dropzone-title {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--up-ink);
+    margin: 0 0 6px;
+}
+
+.upload-dropzone-or {
+    font-size: 12.5px;
+    color: var(--up-muted);
+    margin: 0 0 12px;
+}
+
+.upload-browse-btn {
+    display: inline-block;
+    background: #FFFFFF;
+    border: 1px solid var(--up-border);
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--up-primary);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.upload-dropzone:hover .upload-browse-btn {
+    border-color: var(--up-primary);
+    box-shadow: 0 4px 10px -2px rgba(79, 70, 229, 0.2);
+}
+
+.upload-dropzone-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--up-muted);
+    margin: 16px 0 0;
+}
+
+/* File preview (after selection) */
+.upload-file-preview {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    cursor: default;
+}
+
+.upload-file-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--up-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-file-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.upload-file-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--up-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upload-file-size {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--up-muted);
+    margin-top: 2px;
+}
+
+.upload-file-remove {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: none;
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--up-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.upload-file-remove:hover {
+    background: rgba(239, 68, 68, 0.16);
+}
+
+/* Email field */
+.upload-field {
+    margin-top: 24px;
+}
+
+.upload-field-label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--up-muted);
+    margin-bottom: 8px;
+}
+
+.upload-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1.5px solid var(--up-border);
+    border-radius: 11px;
+    padding: 0 14px;
+    height: 46px;
+    background: #FFFFFF;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.upload-input-wrap:focus-within {
+    border-color: var(--up-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.upload-input-wrap--invalid {
+    border-color: var(--up-red);
+}
+
+.upload-input-wrap--invalid:focus-within {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.upload-input-icon {
+    color: var(--up-muted);
+    flex-shrink: 0;
+}
+
+.upload-input-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--up-ink);
+}
+
+.upload-input-wrap input::placeholder {
+    color: #A6ACBE;
+}
+
+.upload-field-error {
+    display: block;
+    font-size: 12px;
+    color: var(--up-red);
+    margin-top: 6px;
+}
+
+/* Upload button */
+.upload-submit-btn {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    margin-top: 22px;
+    height: 50px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--up-primary), #6366F1);
+    color: #FFFFFF;
+    font-size: 14.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -6px rgba(79, 70, 229, 0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.upload-submit-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--up-primary-hover), #4F46E5);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px -6px rgba(67, 56, 202, 0.5);
+}
+
+.upload-submit-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.upload-submit-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    transform: translate(-50%, -50%);
+    transition: width 0.45s ease, height 0.45s ease, opacity 0.45s ease;
+    opacity: 0;
+}
+
+.upload-submit-btn:active::after {
+    width: 280px;
+    height: 280px;
+    opacity: 1;
+    transition: 0s;
+}
+
+.upload-submit-btn:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.upload-spinner-icon {
+    animation: upload-spin 0.8s linear infinite;
+}
+
+@keyframes upload-spin {
+    to { transform: rotate(360deg); }
+}
+
+.upload-message {
+    margin: 16px 0 0;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--up-ink);
+    text-align: center;
+}
+
+/* Side panel */
+.upload-side-panel {
+    background: var(--up-card);
+    border: 1px solid var(--up-border);
+    border-radius: 20px;
+    padding: 26px 24px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    animation: upload-fade-in 0.5s ease;
+}
+
+.upload-side-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 17px;
+    margin: 0 0 16px;
+}
+
+.upload-why-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.upload-why-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 8px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--up-ink);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.upload-why-item:hover {
+    background: #F8F8FC;
+    transform: translateX(2px);
+}
+
+.upload-why-icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--up-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Recent uploads */
+.upload-empty-state {
+    background: var(--up-card);
+    border: 1px dashed var(--up-border);
+    border-radius: 18px;
+    padding: 48px 24px;
+    text-align: center;
+    animation: upload-fade-in 0.4s ease;
+}
+
+.upload-empty-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    border-radius: 14px;
+    background: #F1F1F8;
+    color: var(--up-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-empty-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--up-ink);
+    margin: 0 0 6px;
+}
+
+.upload-empty-subtitle {
+    font-size: 13px;
+    color: var(--up-muted);
+    margin: 0;
+}
+
+.upload-recent {
+    max-width: 1180px;
+    margin: 40px auto 0;
+    animation: upload-fade-in 0.55s ease;
+}
+
+.upload-recent-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.upload-recent-head h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0;
+}
+
+.upload-recent-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--up-muted);
+}
+
+.upload-recent-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.recent-card {
+    background: var(--up-card);
+    border: 1px solid var(--up-border);
+    border-radius: 16px;
+    padding: 18px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.recent-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px -14px rgba(15, 23, 42, 0.16);
+}
+
+.recent-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.recent-avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--up-primary), #8B7FFF);
+    color: #FFFFFF;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recent-card-id {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.recent-card-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--up-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-card-email {
+    font-size: 11.5px;
+    color: var(--up-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-card-badges {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.score-badge,
+.status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 4px 9px;
+    border-radius: 7px;
+}
+
+.score-badge--success { background: rgba(16, 185, 129, 0.1); color: var(--up-green); }
+.score-badge--warning { background: rgba(217, 119, 87, 0.12); color: #D97757; }
+.score-badge--danger { background: rgba(239, 68, 68, 0.1); color: var(--up-red); }
+
+.status-badge--success { background: rgba(16, 185, 129, 0.1); color: var(--up-green); }
+.status-badge--danger { background: rgba(239, 68, 68, 0.1); color: var(--up-red); }
+.status-badge--neutral { background: #F1F5F9; color: var(--up-muted); }
+
+.recent-card-time {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--up-muted);
+}
+
+/* Animations */
+@keyframes upload-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+    .upload-grid {
+        grid-template-columns: 1fr;
+    }
+    .upload-recent-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .upload-page {
+        padding: 28px 16px 48px;
+    }
+    .upload-title {
+        font-size: 28px;
+    }
+    .upload-card {
+        padding: 22px;
+    }
+    .upload-dropzone {
+        padding: 32px 16px;
+    }
+    .upload-recent-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .upload-page *,
+    .upload-page *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}

@@ -1,0 +1,267 @@
+.candidate-card {
+    --cc-border: #E2E8F0;
+    --cc-ink: #0F172A;
+    --cc-muted: #64748B;
+    --cc-indigo: #4F46E5;
+    --cc-sage: #65A088;
+    --cc-amber: #D97757;
+    --cc-red: #EF4444;
+    --cc-slate: #475569;
+
+    background: #FFFFFF;
+    border: 1px solid var(--cc-border);
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.candidate-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px -16px rgba(15, 23, 42, 0.14);
+    border-color: rgba(15, 23, 42, 0.1);
+}
+
+/* Top row: avatar + identity + status */
+.candidate-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.candidate-avatar {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4F46E5, #8B7FFF);
+    color: #FFFFFF;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.candidate-identity {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.candidate-name {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--cc-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.candidate-email {
+    font-size: 12px;
+    color: var(--cc-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.status-pill {
+    flex-shrink: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 4px 9px;
+    border-radius: 7px;
+    white-space: nowrap;
+}
+
+/* Resume filename row */
+.candidate-resume-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--cc-muted);
+    background: #F8FAFC;
+    border-radius: 9px;
+    padding: 7px 10px;
+}
+
+.candidate-resume-name {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Score pills */
+.candidate-score-row {
+    display: flex;
+    gap: 8px;
+}
+
+.score-pill {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 11px;
+    border-radius: 10px;
+}
+
+.score-pill-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    opacity: 0.85;
+}
+
+.score-pill-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* Shared tier colors (status pill + score pill) */
+.tier-high { background: rgba(101, 160, 136, 0.12); color: var(--cc-sage); }
+.tier-mid { background: rgba(217, 119, 87, 0.12); color: var(--cc-amber); }
+.tier-low { background: rgba(239, 68, 68, 0.1); color: var(--cc-red); }
+.tier-neutral { background: #F1F5F9; color: var(--cc-slate); }
+
+/* Skills */
+.candidate-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.skill-chip {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--cc-indigo);
+    background: rgba(79, 70, 229, 0.08);
+    border-radius: 7px;
+    padding: 4px 9px;
+}
+
+.skill-chip--more {
+    color: var(--cc-muted);
+    background: #F1F5F9;
+}
+
+/* Upload date */
+.candidate-upload-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--cc-muted);
+}
+
+/* Actions */
+.candidate-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:16px;
+}
+
+.candidate-action-btn{
+    flex:1 1 calc(50% - 5px);
+    min-width:160px;
+    height:42px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:13px;
+}
+
+.candidate-action-btn:hover {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
+}
+
+.candidate-action-btn--primary {
+    background: var(--cc-indigo);
+    border-color: var(--cc-indigo);
+    color: #FFFFFF;
+}
+
+.candidate-action-btn--primary:hover {
+    background: #4338CA;
+    border-color: #4338CA;
+}
+
+/* Responsive */
+@media (max-width: 560px) {
+    .candidate-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .candidate-action-btn {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .candidate-card {
+        transition: none;
+    }
+}
+.candidate-menu{
+    position:relative;
+}
+
+.candidate-dropdown{
+    position:absolute;
+    right:0;
+    top:48px;
+
+    width:190px;
+
+    background:white;
+
+    border:1px solid #ddd;
+
+    border-radius:12px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.15);
+
+    z-index:100;
+}
+
+.candidate-dropdown button{
+
+    width:100%;
+
+    border:none;
+
+    background:white;
+
+    padding:12px 16px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    cursor:pointer;
+
+    font-size:14px;
+}
+
+.candidate-dropdown button:hover{
+
+    background:#f4f6ff;
+
+}
