@@ -18,6 +18,7 @@ public class InterviewService {
 
     private final InterviewRepository interviewRepository;
     private final ResumeRepository resumeRepository;
+    private final EmailService emailService;
 
     // Schedule Interview
     public Interview scheduleInterview(
@@ -39,7 +40,29 @@ public class InterviewService {
 
         resumeRepository.save(resume);
 
-        return interviewRepository.save(interview);
+        Interview savedInterview = interviewRepository.save(interview);
+
+emailService.sendInterviewInvitation(
+
+        resume.getCandidateEmail(),
+
+        resume.getCandidateEmail().split("@")[0],
+
+        interview.getInterviewer(),
+
+        interview.getInterviewDate().toString(),
+
+        interview.getInterviewTime().toString(),
+
+        interview.getMode(),
+
+        interview.getMeetingLink(),
+
+        interview.getLocation()
+
+);
+
+return savedInterview;
     }
 
     // Get interview for one candidate

@@ -11,5 +11,11 @@ public class InterviewInviteRequest {
 
     private String interviewTime;
 
+    private String interviewer;
+
+    private String mode;
+
+    private String location;
+
     private String meetingLink;
 }

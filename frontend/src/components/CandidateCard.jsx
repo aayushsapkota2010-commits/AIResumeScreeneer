@@ -47,9 +47,10 @@ function CandidateCard({
     candidate,
     onViewResume,
     onOpenProfile,
+    onInterviewInvite,
     onMoveStage,
-    onInterviewInvite
-}){
+    onGenerateQuestions
+}) {
     const {
         name,
         email,
@@ -159,6 +160,13 @@ function CandidateCard({
                 <ArrowRightLeft size={14}/>
                 Move Stage
             </button>
+
+            <button
+    className="ai-btn"
+    onClick={() => onGenerateQuestions(candidate)}
+>
+    🤖 Generate AI Questions
+</button>
 
             <button
                 onClick={()=>{

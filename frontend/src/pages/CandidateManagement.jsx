@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/api";
 import { useNavigate } from "react-router-dom";
+import InterviewQuestionModal
+from "../components/InterviewQuestionModal";
 
 
 import {
@@ -53,6 +55,12 @@ function CandidateManagement() {
     const [interviewModalOpen, setInterviewModalOpen] = useState(false);
 
 const [selectedInterviewCandidate, setSelectedInterviewCandidate] = useState(null);
+const [editingInterview, setEditingInterview] = useState(null);
+const [questionModalOpen, setQuestionModalOpen] = useState(false);
+
+const [generatedQuestions, setGeneratedQuestions] = useState("");
+
+const [loadingQuestions, setLoadingQuestions] = useState(false);
 
     useEffect(() => {
        api.get("/resume/all")
@@ -168,6 +176,35 @@ const handleViewResume = (candidate) => {
         `${API_URL}/resume/view/${candidate.id}`,
         "_blank"
     );
+
+};
+
+const handleGenerateQuestions = async (candidate) => {
+
+    try {
+
+        setLoadingQuestions(true);
+
+        const response = await api.post(
+            `/ai/interview-questions/${candidate.id}`
+        );
+
+        setGeneratedQuestions(response.data.questions);
+
+        setQuestionModalOpen(true);
+        console.log(response.data); 
+
+    } catch (err) {
+
+        console.log(err);
+
+        alert("Failed to generate AI questions.");
+
+    } finally {
+
+        setLoadingQuestions(false);
+
+    }
 
 };
 const handleDownload = () => {
@@ -348,6 +385,7 @@ const handleInterviewInvite = (candidate) => {
     onOpenProfile={handleOpenProfile}
     onInterviewInvite={handleInterviewInvite}
     onMoveStage={handleMoveStage}
+    onGenerateQuestions={handleGenerateQuestions}
 />
                     ))}
                 </div>
@@ -363,34 +401,66 @@ const handleInterviewInvite = (candidate) => {
 />
 <InterviewModal
     isOpen={interviewModalOpen}
-    onClose={() => setInterviewModalOpen(false)}
+    onClose={() => {
+        setInterviewModalOpen(false);
+        setEditingInterview(null);
+        setSelectedInterviewCandidate(null);
+    }}
     candidate={selectedInterviewCandidate}
+    interview={editingInterview}
     onSuccess={() => {
 
         api.get("/resume/all")
             .then((res) => {
 
                 const mapped = res.data.map((resume) => ({
+
                     id: resume.id,
+
                     name: resume.candidateEmail
                         ? resume.candidateEmail.split("@")[0]
-                        : "Unnamed Candidate",
-                    email: resume.candidateEmail || "No Email",
+                        : resume.fileName.replace(".pdf", ""),
+
+                    email: resume.candidateEmail || "",
+
                     resumeFileName: resume.fileName,
+
                     atsScore: resume.atsScore ?? 0,
+
                     matchScore: resume.matchScore ?? 0,
+
                     status: resume.status,
+
                     uploadDate: resume.uploadedAt,
+
                     skills: resume.skills
-                        ? resume.skills.split(",")
-                        : []
+                        ? resume.skills.split(",").filter(Boolean)
+                        : [],
+
+                    resumeId: resume.id
+
                 }));
 
                 setCandidates(mapped);
 
+            })
+            .catch((err) => {
+
+                console.error(err);
+
             });
 
     }}
+/>
+
+<InterviewQuestionModal
+
+    isOpen={questionModalOpen}
+
+    onClose={() => setQuestionModalOpen(false)}
+
+    questions={generatedQuestions}
+
 />
 <MoveStageModal
 
@@ -398,8 +468,7 @@ const handleInterviewInvite = (candidate) => {
 
     onClose={() => setModalOpen(false)}
 
-    candidate={selectedCandidate}
-
+candidate={selectedCandidate}
     onSuccess={() => {
 
         api.get("/resume/all")

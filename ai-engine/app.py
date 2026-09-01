@@ -247,3 +247,98 @@ Return only the answer.
     return {
         "answer": response.text
     }
+
+class InterviewQuestionRequest(BaseModel):
+    resumeText: str
+
+
+@app.post("/interview-questions")
+def generate_interview_questions(request: InterviewQuestionRequest):
+
+    prompt = f"""
+You are a Senior Technical Interviewer.
+
+Candidate Resume:
+
+{request.resumeText}
+
+Generate interview questions in exactly three sections.
+
+Technical Questions:
+- 10 questions
+
+HR Questions:
+- 5 questions
+
+Project Questions:
+- 5 questions
+
+Return only plain text using exactly this format.
+
+Technical Questions:
+1.
+2.
+
+HR Questions:
+1.
+2.
+
+Project Questions:
+1.
+2.
+"""
+
+    response = model.generate_content(prompt)
+
+    return {
+        "questions": response.text
+    }
+
+class InterviewQuestionRequest(BaseModel):
+    resumeText: str
+
+
+@app.post("/interview-questions")
+def interview_questions(request: InterviewQuestionRequest):
+
+    prompt = f"""
+You are a Senior Technical Interviewer.
+
+Resume:
+
+{request.resumeText}
+
+Generate interview questions based ONLY on the resume.
+
+Return exactly in this format:
+
+Technical Questions
+1.
+2.
+3.
+4.
+5.
+
+HR Questions
+1.
+2.
+3.
+4.
+5.
+
+Project Questions
+1.
+2.
+3.
+4.
+5.
+
+Do not explain anything.
+Do not add markdown.
+"""
+
+    response = model.generate_content(prompt)
+
+    return {
+        "questions": response.text
+    }

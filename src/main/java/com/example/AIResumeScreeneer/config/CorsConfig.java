@@ -1,12 +1,12 @@
 package com.example.AIResumeScreeneer.config;
 
-import java.util.List;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 public class CorsConfig {
@@ -18,13 +18,22 @@ public class CorsConfig {
                 new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173"));
+                List.of("http://localhost:5173")
+        );
 
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
 
         configuration.setAllowedHeaders(
-                List.of("*"));
+                List.of("*")
+        );
 
         configuration.setAllowCredentials(true);
 
@@ -33,7 +42,8 @@ public class CorsConfig {
 
         source.registerCorsConfiguration(
                 "/**",
-                configuration);
+                configuration
+        );
 
         return source;
     }

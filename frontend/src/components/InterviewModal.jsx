@@ -6,7 +6,8 @@ function InterviewModal({
     isOpen,
     onClose,
     candidate,
-    onSuccess
+    onSuccess,
+    interview
 }) {
 
     const [form, setForm] = useState({
@@ -22,18 +23,41 @@ function InterviewModal({
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
-            setForm({
-                interviewDate: "",
-                interviewTime: "",
-                interviewer: "",
-                mode: "Online",
-                meetingLink: "",
-                location: "",
-                notes: ""
-            });
-        }
-    }, [isOpen]);
+
+    if (!isOpen) return;
+
+    if (interview) {
+
+        setForm({
+            interviewDate: interview.interviewDate || "",
+            interviewTime: interview.interviewTime || "",
+            interviewer: interview.interviewer || "",
+            mode: interview.mode || "Online",
+            meetingLink: interview.meetingLink || "",
+            location: interview.location || "",
+            notes: interview.notes || ""
+        });
+
+    } else {
+
+        setForm({
+            interviewDate: "",
+            interviewTime: "",
+            interviewer: "",
+            mode: "Online",
+            meetingLink: "",
+            location: "",
+            notes: ""
+        });
+
+    }
+
+}, [isOpen, interview]);
+console.log("Modal State:", {
+    isOpen,
+    candidate,
+    interview
+});
 
     if (!isOpen || !candidate) return null;
 
@@ -46,33 +70,53 @@ function InterviewModal({
 
     const handleSubmit = async () => {
 
-        try {
+    try {
 
-            setLoading(true);
+        setLoading(true);
+
+        if (interview) {
+
+            await api.put(
+
+                `/interview/update/${interview.id}`,
+
+                form
+
+            );
+
+            alert("Interview Updated Successfully!");
+
+        } else {
 
             await api.post(
+
                 `/interview/schedule/${candidate.id}`,
+
                 form
+
             );
 
             alert("Interview Scheduled Successfully!");
 
-            onSuccess?.();
-
-            onClose();
-
-        } catch (err) {
-
-            console.error(err);
-
-            alert("Failed to Schedule Interview");
-
-        } finally {
-
-            setLoading(false);
-
         }
-    };
+
+        onSuccess?.();
+
+        onClose();
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert("Operation Failed");
+
+    } finally {
+
+        setLoading(false);
+
+    }
+
+};
 
     return (
 
@@ -80,8 +124,11 @@ function InterviewModal({
 
             <div className="interview-modal">
 
-                <h2>Schedule Interview</h2>
+                <h2>
 
+                    {interview ? "Edit Interview" : "Schedule Interview"}
+
+                </h2>
                 <p className="candidate-name">
                     {candidate.name}
                 </p>
@@ -180,8 +227,10 @@ function InterviewModal({
                         disabled={loading}
                     >
                         {loading
-                            ? "Scheduling..."
-                            : "Schedule Interview"}
+? "Saving..."
+: interview
+    ? "Update Interview"
+    : "Schedule Interview"}
                     </button>
 
                 </div>

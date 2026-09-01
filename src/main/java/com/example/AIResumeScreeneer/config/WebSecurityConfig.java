@@ -18,38 +18,58 @@ public class WebSecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http) throws Exception {
 
         http
-                .cors(cors -> {})
-                .csrf(csrf -> csrf.disable())
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS))
+            // CORS
+            .cors(cors -> {})
 
-               .authorizeHttpRequests(auth -> auth
+            // Disable CSRF because JWT is being used
+            .csrf(csrf -> csrf.disable())
 
-    .requestMatchers(
-        "/api/auth/**",
-        "/api/resume/view/**"
-).permitAll()
+            // Stateless authentication
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(
+                    SessionCreationPolicy.STATELESS
+                )
+            )
 
-.requestMatchers("/api/admin/**")
-.hasRole("ADMIN")
+            // Authorization rules
+            .authorizeHttpRequests(auth -> auth
 
-.requestMatchers("/api/resume/**")
-.hasAnyRole("ADMIN", "USER")
+                // Authentication APIs
+                .requestMatchers(
+                    "/api/auth/**"
+                ).permitAll()
 
-.anyRequest()
-.authenticated()
-)
+                // Resume viewing
+                .requestMatchers(
+                    "/api/resume/view/**"
+                ).permitAll()
 
-                .addFilterBefore(
-                        jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                );
+                // ADMIN ONLY
+                .requestMatchers(
+                    "/api/admin/**",
+                    "/api/user/all"
+                ).hasRole("ADMIN")
+
+                // ADMIN + USER
+                .requestMatchers(
+                    "/api/resume/**"
+                ).hasAnyRole("ADMIN", "USER")
+
+                // Everything else
+                .anyRequest()
+                .authenticated()
+            )
+
+            // JWT filter
+            .addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }

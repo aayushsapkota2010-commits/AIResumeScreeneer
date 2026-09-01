@@ -74,16 +74,25 @@ public String sendInterviewInvite(
                     .findById(id)
                     .orElseThrow();
 
-    emailService.sendInterviewInvitation(
+  emailService.sendInterviewInvitation(
 
-            resume.getCandidateEmail(),
+        resume.getCandidateEmail(),
 
-            request.getInterviewDate(),
+        resume.getCandidateEmail().split("@")[0],
 
-            request.getInterviewTime(),
+        request.getInterviewer(),
 
-            request.getMeetingLink()
-    );
+        request.getInterviewDate(),
+
+        request.getInterviewTime(),
+
+        request.getMode(),
+
+        request.getMeetingLink(),
+
+        request.getLocation()
+
+);
 
     return "Interview Invite Sent";
 }

@@ -1,10 +1,9 @@
 package com.example.AIResumeScreeneer.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -12,63 +11,109 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-   public void sendInterviewInvitation(
+    public void sendInterviewInvitation(
 
-        String email,
-        String interviewDate,
-        String interviewTime,
-        String meetingLink) {
+            String to,
 
-    SimpleMailMessage message =
-            new SimpleMailMessage();
+            String candidateName,
 
-    message.setTo(email);
+            String interviewer,
 
-    message.setSubject(
-            "Interview Invitation");
+            String date,
 
-    message.setText(
+            String time,
 
-            "Congratulations!\n\n" +
+            String mode,
 
-            "You have been shortlisted for the interview round.\n\n" +
+            String meetingLink,
 
-            "Interview Date: "
-                    + interviewDate +
+            String location
 
-            "\nInterview Time: "
-                    + interviewTime +
+    ) {
 
-            "\nMeeting Link: "
-                    + meetingLink +
+        SimpleMailMessage message = new SimpleMailMessage();
 
-            "\n\nBest Regards\nRecruitment Team"
-    );
+        message.setTo(to);
 
-    mailSender.send(message);
-}
+        message.setSubject("Interview Invitation - AI Resume Screener");
 
+        String body = """
 
+Hello %s,
+
+Congratulations!
+
+Your profile has been shortlisted.
+
+Your interview has been scheduled.
+
+-----------------------------------------
+
+Date : %s
+
+Time : %s
+
+Mode : %s
+
+Interviewer : %s
+
+Meeting Link : %s
+
+Location : %s
+
+-----------------------------------------
+
+Please join 10 minutes before the scheduled time.
+
+Best of luck!
+
+Regards,
+AI Resume Screener Team
+"""
+.formatted(
+        candidateName,
+        date,
+        time,
+        mode,
+        interviewer,
+        meetingLink == null ? "-" : meetingLink,
+        location == null ? "-" : location
+);
+
+        message.setText(body);
+
+        mailSender.send(message);
+    }
     public void sendStatusUpdateEmail(
-        String to,
-        String status) {
 
-    SimpleMailMessage message =
-            new SimpleMailMessage();
+        String to,
+
+        String status
+
+) {
+
+    SimpleMailMessage message = new SimpleMailMessage();
 
     message.setTo(to);
 
-    message.setSubject(
-            "Application Status Updated");
+    message.setSubject("Application Status Updated");
 
-   message.setText(
-        "Hello,\n\n" +
-        "Your application status has been updated.\n\n" +
-        "Current Status: " + status + "\n\n" +
-        "Thank you for applying.\n\n" +
-        "Regards,\nAI Resume Screener Team"
-);
+    message.setText("""
+
+Hello,
+
+Your application status has been updated.
+
+Current Status:
+
+%s
+
+Regards,
+AI Resume Screener Team
+
+""".formatted(status));
 
     mailSender.send(message);
+
 }
 }

@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.SAXException;
 
+import com.example.AIResumeScreeneer.service.AIInterviewService;
 import com.example.AIResumeScreeneer.service.AIResumeAnalysisService;
 import com.example.AIResumeScreeneer.service.ActivityLogService;
 import com.example.AIResumeScreeneer.service.CandidateDashboardService;
 import com.example.AIResumeScreeneer.service.CareerRoadmapService;
 import com.example.AIResumeScreeneer.service.CoverLetterService;
-import com.example.AIResumeScreeneer.service.InterviewQuestionService;
 import com.example.AIResumeScreeneer.service.JobMatchingService;
 import com.example.AIResumeScreeneer.service.JobRankingService;
 import com.example.AIResumeScreeneer.service.JobRecommendationService;
@@ -93,7 +93,7 @@ public class ResumeController {
     private final KeywordGapService keywordGapService;
     private final ResumeImprovementService resumeImprovementService;
     private final JobRankingService jobRankingService;
-    private final InterviewQuestionService interviewQuestionService;
+    private final AIInterviewService aiInterviewService;
     private final AIResumeAnalysisService aiResumeAnalysisService;
     private final RankingService rankingService;
     private final DashboardService dashboardService;
@@ -220,16 +220,15 @@ public List<JobRankingResponse> rankJobs(
 }
 @PostMapping("/interview/{id}")
 public InterviewQuestionResponse generateInterviewQuestions(
-        @PathVariable Long id,
-        @RequestBody JobDescriptionRequest request) {
+        @PathVariable Long id) {
 
-    Resume resume =
-            resumeRepository.findById(id)
-                    .orElseThrow();
+    Resume resume = resumeRepository
+            .findById(id)
+            .orElseThrow(() -> new RuntimeException("Resume not found"));
 
-    return interviewQuestionService.generate(
-            resume.getExtractedText(),
-            request.getJobDescription());
+    return aiInterviewService.generateQuestions(
+            resume.getExtractedText()
+    );
 }
 
 @PostMapping("/ai-analysis/{id}")
@@ -472,16 +471,25 @@ public String sendInterviewInvite(
                     .findById(id)
                     .orElseThrow();
 
-    emailService.sendInterviewInvitation(
+   emailService.sendInterviewInvitation(
 
-            resume.getCandidateEmail(),
+        resume.getCandidateEmail(),
 
-            request.getInterviewDate(),
+        resume.getCandidateEmail().split("@")[0],
 
-            request.getInterviewTime(),
+        request.getInterviewer(),
 
-            request.getMeetingLink()
-    );
+        request.getInterviewDate(),
+
+        request.getInterviewTime(),
+
+        request.getMode(),
+
+        request.getMeetingLink(),
+
+        request.getLocation()
+
+);
 
     activityLogService.saveLog(
 

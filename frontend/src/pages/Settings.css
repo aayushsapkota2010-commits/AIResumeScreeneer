@@ -1,0 +1,177 @@
+.settings-page {
+    padding: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.settings-header {
+    margin-bottom: 28px;
+}
+
+.settings-eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #6366f1;
+    margin-bottom: 6px;
+}
+
+.settings-header h1 {
+    margin: 0;
+    font-size: 32px;
+    color: #111827;
+}
+
+.settings-header p {
+    margin-top: 8px;
+    color: #6b7280;
+}
+
+
+/* =========================
+   MESSAGES
+========================= */
+
+.settings-success {
+    padding: 13px 16px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.settings-error {
+    padding: 13px 16px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+
+/* =========================
+   GRID
+========================= */
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+
+/* =========================
+   CARD
+========================= */
+
+.settings-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.settings-card-header {
+    margin-bottom: 24px;
+}
+
+.settings-card-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #111827;
+}
+
+.settings-card-header p {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+
+/* =========================
+   FORM
+========================= */
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.settings-form label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 7px;
+}
+
+.settings-form input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 13px;
+    border-radius: 9px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #111827;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.settings-form input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.settings-form input:disabled {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+
+/* =========================
+   BUTTON
+========================= */
+
+.settings-primary-btn {
+    margin-top: 18px;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 9px;
+    background: #4f46e5;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.settings-primary-btn:hover {
+    background: #4338ca;
+}
+
+.settings-primary-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 800px) {
+
+    .settings-page {
+        padding: 20px;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
