@@ -1,6 +1,5 @@
 import { Download, ExternalLink, ArrowRightLeft, FileText, Calendar } from "lucide-react";
 import "./ProfileDrawer.css";
-import "./ProfileDrawer.jsx";
 import api from "../api/api";
 
 

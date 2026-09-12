@@ -26,6 +26,7 @@ import CandidateDashboard from "./pages/CandidateDashboard";
 import KanbanBoard from "./pages/KanbanBoard";
 import InterviewDashboard from "./pages/InterviewDashboard";
 import Settings from "./pages/Settings";
+import UserProfile from "./pages/UserProfile";
 
 
 function App() {
@@ -299,6 +300,17 @@ function App() {
                         </Layout>
                     }
                 />
+                
+                   <Route
+    path="/profile"
+    element={
+        <Layout>
+            <ProtectedRoute>
+                <UserProfile />
+            </ProtectedRoute>
+        </Layout>
+    }
+/>
 
 
                 {/* =========================
