@@ -10,8 +10,8 @@ import {
     LogOut
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import "./Navbar.css";
 import api from "../api/api";
+import "./Navbar.css";
 
 function Navbar() {
     const navigate = useNavigate();
@@ -25,13 +25,13 @@ function Navbar() {
     const [notifOpen, setNotifOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
 
-   const [userName, setUserName] = useState(
-    localStorage.getItem("name") || ""
-);
+    const [userName, setUserName] = useState(
+        localStorage.getItem("name") || ""
+    );
 
-const [userRole, setUserRole] = useState(
-    localStorage.getItem("role") || ""
-);
+    const [userRole, setUserRole] = useState(
+        localStorage.getItem("role") || ""
+    );
 
     const notifRef = useRef(null);
     const profileRef = useRef(null);
@@ -48,33 +48,33 @@ const [userRole, setUserRole] = useState(
         );
     }, [isDark]);
 
-   useEffect(() => {
-    const loadNavbarProfile = async () => {
-        try {
-            const response = await api.get("/user/profile");
+    useEffect(() => {
+        const loadNavbarProfile = async () => {
+            try {
+                const response = await api.get("/user/profile");
 
-            const fullName = response.data?.fullName;
-            const role = response.data?.role;
+                const fullName = response.data?.fullName;
+                const role = response.data?.role;
 
-            if (fullName) {
-                setUserName(fullName);
-                localStorage.setItem("name", fullName);
+                if (fullName) {
+                    setUserName(fullName);
+                    localStorage.setItem("name", fullName);
+                }
+
+                if (role) {
+                    setUserRole(role);
+                    localStorage.setItem("role", role);
+                }
+            } catch (error) {
+                console.error(
+                    "Failed to load navbar profile:",
+                    error
+                );
             }
+        };
 
-            if (role) {
-                setUserRole(role);
-                localStorage.setItem("role", role);
-            }
-        } catch (error) {
-            console.error(
-                "Failed to load navbar profile:",
-                error
-            );
-        }
-    };
-
-    loadNavbarProfile();
-}, []);
+        loadNavbarProfile();
+    }, []);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -128,12 +128,33 @@ const [userRole, setUserRole] = useState(
     ];
 
     const initials = userName
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((word) => word[0])
-        .join("")
-        .toUpperCase();
+        ? userName
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((word) => word[0])
+              .join("")
+              .toUpperCase()
+        : "U";
+
+    const handleSearch = () => {
+        const searchValue = query.trim();
+
+        if (!searchValue) {
+            navigate("/search");
+            return;
+        }
+
+        navigate(
+            `/search?query=${encodeURIComponent(searchValue)}`
+        );
+    };
+
+    const handleSearchKeyDown = (event) => {
+        if (event.key === "Enter") {
+            handleSearch();
+        }
+    };
 
     const handleMyProfile = () => {
         setProfileOpen(false);
@@ -168,23 +189,33 @@ const [userRole, setUserRole] = useState(
             </div>
 
             <div className="navbar-search">
-                <Search
-                    size={16}
-                    className="navbar-search-icon"
-                />
+
+                <button
+                    type="button"
+                    className="navbar-search-button"
+                    onClick={handleSearch}
+                    aria-label="Search"
+                >
+                    <Search
+                        size={17}
+                        className="navbar-search-icon"
+                    />
+                </button>
 
                 <input
                     type="text"
                     placeholder="Search resumes..."
                     value={query}
-                    onChange={(e) =>
-                        setQuery(e.target.value)
+                    onChange={(event) =>
+                        setQuery(event.target.value)
                     }
+                    onKeyDown={handleSearchKeyDown}
                 />
 
                 <kbd className="navbar-search-kbd">
                     ⌘K
                 </kbd>
+
             </div>
 
             <div className="navbar-right">
@@ -205,7 +236,6 @@ const [userRole, setUserRole] = useState(
                         }}
                     >
                         <Bell size={18} />
-
                         <span className="navbar-badge" />
                     </button>
 
@@ -261,6 +291,7 @@ const [userRole, setUserRole] = useState(
                                 )}
 
                             </div>
+
                         </div>
                     )}
                 </div>
@@ -292,6 +323,7 @@ const [userRole, setUserRole] = useState(
                     className="navbar-popover"
                     ref={profileRef}
                 >
+
                     <button
                         type="button"
                         className="navbar-profile-btn"
@@ -303,11 +335,11 @@ const [userRole, setUserRole] = useState(
                         }}
                     >
                         <span className="navbar-avatar">
-                            {initials || "U"}
+                            {initials}
                         </span>
 
                         <span className="navbar-profile-name">
-                            {userName}
+                            {userName || "User"}
                         </span>
 
                         <ChevronDown
@@ -326,16 +358,16 @@ const [userRole, setUserRole] = useState(
                             <div className="navbar-dropdown-profile-head">
 
                                 <span className="navbar-avatar navbar-avatar--lg">
-                                    {initials || "U"}
+                                    {initials}
                                 </span>
 
                                 <div>
                                     <p className="navbar-profile-fullname">
-                                        {userName}
+                                        {userName || "User"}
                                     </p>
 
                                     <p className="navbar-profile-role">
-                                        {userRole}
+                                        {userRole || "User"}
                                     </p>
                                 </div>
 
@@ -349,7 +381,6 @@ const [userRole, setUserRole] = useState(
                                 onClick={handleMyProfile}
                             >
                                 <User size={15} />
-
                                 <span>
                                     My Profile
                                 </span>
@@ -361,7 +392,6 @@ const [userRole, setUserRole] = useState(
                                 onClick={handleAccountSettings}
                             >
                                 <SettingsIcon size={15} />
-
                                 <span>
                                     Account Settings
                                 </span>
@@ -375,7 +405,6 @@ const [userRole, setUserRole] = useState(
                                 onClick={handleLogout}
                             >
                                 <LogOut size={15} />
-
                                 <span>
                                     Log out
                                 </span>
@@ -383,9 +412,11 @@ const [userRole, setUserRole] = useState(
 
                         </div>
                     )}
+
                 </div>
 
             </div>
+
         </header>
     );
 }

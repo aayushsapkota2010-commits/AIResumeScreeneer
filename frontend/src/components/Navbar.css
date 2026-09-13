@@ -4,11 +4,15 @@
     display: flex;
     align-items: center;
     padding: 0 34px;
-    background: #ffffff;
-    border-bottom: 1px solid #e8e8ee;
+    background: var(--app-surface, #ffffff);
+    border-bottom: 1px solid var(--app-border, #e8e8ee);
     box-sizing: border-box;
     position: relative;
     z-index: 50;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
 }
 
 .navbar-left {
@@ -24,7 +28,7 @@
     font-size: 29px;
     font-weight: 700;
     line-height: 1;
-    color: #17171c;
+    color: var(--app-text, #17171c);
     letter-spacing: -0.8px;
 }
 
@@ -34,10 +38,10 @@
     margin-left: 8px;
     display: flex;
     align-items: center;
-    background: #f7f7fa;
+    background: var(--app-surface-secondary, #f7f7fa);
     border: 1px solid transparent;
     border-radius: 14px;
-    padding: 0 12px 0 16px;
+    padding: 0 12px 0 8px;
     box-sizing: border-box;
     transition:
         background 0.2s ease,
@@ -46,17 +50,43 @@
 }
 
 .navbar-search:focus-within {
-    background: #ffffff;
-    border-color: #dcdce6;
+    background: var(--app-surface, #ffffff);
+    border-color: var(--app-border, #dcdce6);
     box-shadow: 0 0 0 3px rgba(98, 92, 245, 0.08);
+}
+
+.navbar-search-button {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--app-text-secondary, #64748b);
+    border-radius: 9px;
+    padding: 0;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.navbar-search-button:hover {
+    background: rgba(79, 70, 229, 0.1);
+    color: #4f46e5;
+}
+
+.navbar-search-button:active {
+    transform: scale(0.94);
 }
 
 .navbar-search-icon {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
-    color: #737586;
-    margin-right: 12px;
 }
 
 .navbar-search input {
@@ -65,13 +95,14 @@
     border: none;
     outline: none;
     background: transparent;
-    color: #292932;
+    color: var(--app-text, #292932);
     font-family: inherit;
     font-size: 14px;
+    padding: 0 8px;
 }
 
 .navbar-search input::placeholder {
-    color: #9293a0;
+    color: var(--app-text-secondary, #9293a0);
 }
 
 .navbar-search-kbd {
@@ -81,10 +112,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #dedee7;
+    border: 1px solid var(--app-border, #dedee7);
     border-radius: 8px;
-    background: #ffffff;
-    color: #777986;
+    background: var(--app-surface, #ffffff);
+    color: var(--app-text-secondary, #777986);
     font-family: inherit;
     font-size: 13px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -115,7 +146,7 @@
     border: none;
     border-radius: 50%;
     background: transparent;
-    color: #444652;
+    color: var(--app-text-secondary, #444652);
     cursor: pointer;
     padding: 0;
     transition:
@@ -130,8 +161,8 @@
 }
 
 .navbar-icon-btn:hover {
-    background: #f5f5f8;
-    color: #272832;
+    background: var(--app-hover, #f5f5f8);
+    color: var(--app-text, #272832);
 }
 
 .navbar-badge {
@@ -145,7 +176,7 @@
     justify-content: center;
     border-radius: 50%;
     background: #ef4444;
-    border: 2px solid #ffffff;
+    border: 2px solid var(--app-surface, #ffffff);
     box-sizing: border-box;
     z-index: 2;
 }
@@ -162,7 +193,7 @@
     width: 1px;
     height: 38px;
     margin: 0 10px;
-    background: #e5e5eb;
+    background: var(--app-border, #e5e5eb);
     flex-shrink: 0;
 }
 
@@ -180,7 +211,7 @@
 }
 
 .navbar-profile-btn:hover {
-    background: #f7f7fa;
+    background: var(--app-hover, #f7f7fa);
 }
 
 .navbar-avatar {
@@ -202,7 +233,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #292a32;
+    color: var(--app-text, #292a32);
     font-size: 15px;
     font-weight: 500;
 }
@@ -210,7 +241,7 @@
 .navbar-chevron {
     width: 18px;
     height: 18px;
-    color: #555762;
+    color: var(--app-text-secondary, #555762);
     flex-shrink: 0;
     transition: transform 0.2s ease;
 }
@@ -223,8 +254,8 @@
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    background: #ffffff;
-    border: 1px solid #e7e7ed;
+    background: var(--app-surface, #ffffff);
+    border: 1px solid var(--app-border, #e7e7ed);
     border-radius: 16px;
     box-shadow:
         0 18px 45px rgba(20, 20, 35, 0.15),
@@ -247,8 +278,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 18px;
-    border-bottom: 1px solid #eeeeF2;
-    color: #292a32;
+    border-bottom: 1px solid var(--app-border, #eeeef2);
+    color: var(--app-text, #292a32);
     font-size: 14px;
     font-weight: 600;
 }
@@ -280,7 +311,7 @@
 }
 
 .navbar-notif-item:hover {
-    background: #f8f8fb;
+    background: var(--app-hover, #f8f8fb);
 }
 
 .navbar-notif-dot {
@@ -299,7 +330,7 @@
 
 .navbar-notif-title {
     margin: 0 0 4px;
-    color: #25252d;
+    color: var(--app-text, #25252d);
     font-size: 13px;
     font-weight: 600;
     line-height: 1.3;
@@ -307,13 +338,13 @@
 
 .navbar-notif-detail {
     margin: 0;
-    color: #777884;
+    color: var(--app-text-secondary, #777884);
     font-size: 12px;
     line-height: 1.45;
 }
 
 .navbar-notif-time {
-    color: #9a9ba5;
+    color: var(--app-text-secondary, #9a9ba5);
     font-size: 11px;
     white-space: nowrap;
     margin-top: 1px;
@@ -333,20 +364,20 @@
 
 .navbar-profile-fullname {
     margin: 0 0 3px;
-    color: #25262e;
+    color: var(--app-text, #25262e);
     font-size: 14px;
     font-weight: 600;
 }
 
 .navbar-profile-role {
     margin: 0;
-    color: #858692;
+    color: var(--app-text-secondary, #858692);
     font-size: 12px;
 }
 
 .navbar-dropdown-divider {
     height: 1px;
-    background: #eeeeF2;
+    background: var(--app-border, #eeeef2);
 }
 
 .navbar-dropdown-item {
@@ -357,7 +388,7 @@
     padding: 12px 17px;
     border: none;
     background: transparent;
-    color: #3c3c47;
+    color: var(--app-text, #3c3c47);
     font-size: 13px;
     text-align: left;
     cursor: pointer;
@@ -372,7 +403,7 @@
 }
 
 .navbar-dropdown-item:hover {
-    background: #f7f7fa;
+    background: var(--app-hover, #f7f7fa);
 }
 
 .navbar-dropdown-item--danger {
@@ -380,7 +411,13 @@
 }
 
 .navbar-dropdown-item--danger:hover {
-    background: #fff5f5;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+[data-theme="dark"] .navbar-dropdown {
+    box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.45),
+        0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 @media (max-width: 1200px) {

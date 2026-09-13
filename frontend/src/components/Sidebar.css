@@ -1,11 +1,11 @@
 .sidebar {
     --sb-w-expanded: 264px;
     --sb-w-collapsed: 80px;
-    --sb-accent: #4F5EFF;
+    --sb-accent: #4f5eff;
     --sb-accent-soft: rgba(79, 94, 255, 0.1);
     --sb-accent-glow: rgba(79, 94, 255, 0.35);
-    --sb-ink: #11131A;
-    --sb-muted: #7B8093;
+    --sb-ink: #11131a;
+    --sb-muted: #7b8093;
     --sb-line: rgba(17, 19, 26, 0.07);
     --sb-radius: 18px;
 
@@ -19,8 +19,16 @@
     padding: 18px 14px;
     box-sizing: border-box;
     isolation: isolate;
-    transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-    font-family: 'Inter', -apple-system, sans-serif;
+    transition:
+        width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.2s ease;
+    font-family: "Inter", -apple-system, sans-serif;
+}
+
+[data-theme="dark"] .sidebar {
+    --sb-ink: #f1f5f9;
+    --sb-muted: #9aa4b7;
+    --sb-line: rgba(255, 255, 255, 0.08);
 }
 
 .sidebar--collapsed {
@@ -34,18 +42,33 @@
     background:
         radial-gradient(
             120% 90% at 0% 0%,
-            rgba(79, 94, 255, 0.05),
+            rgba(79, 94, 255, 0.08),
             transparent 55%
         ),
         linear-gradient(
             180deg,
-            rgba(255, 255, 255, 0.92) 0%,
-            rgba(250, 250, 252, 0.86) 100%
+            rgba(255, 255, 255, 0.96) 0%,
+            rgba(250, 250, 252, 0.92) 100%
         );
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-right: 1px solid var(--sb-line);
     box-shadow: 8px 0 32px -16px rgba(17, 19, 26, 0.06);
+}
+
+[data-theme="dark"] .sidebar-glass {
+    background:
+        radial-gradient(
+            120% 90% at 0% 0%,
+            rgba(79, 94, 255, 0.14),
+            transparent 55%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(23, 26, 33, 0.98) 0%,
+            rgba(15, 17, 23, 0.98) 100%
+        );
+    box-shadow: 8px 0 32px -16px rgba(0, 0, 0, 0.5);
 }
 
 .sidebar-top {
@@ -65,10 +88,10 @@
     height: 38px;
     flex-shrink: 0;
     border-radius: 12px;
-    background: linear-gradient(140deg, #4F5EFF 0%, #7C6FFF 100%);
+    background: linear-gradient(140deg, #4f5eff 0%, #7c6fff 100%);
     box-shadow: 0 6px 16px -4px rgba(79, 94, 255, 0.45);
-    color: #FFFFFF;
-    font-family: 'IBM Plex Mono', monospace;
+    color: #ffffff;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 14px;
     font-weight: 600;
     display: flex;
@@ -95,7 +118,7 @@
 }
 
 .sidebar-brand-name {
-    font-family: 'Fraunces', serif;
+    font-family: "Fraunces", serif;
     font-weight: 600;
     font-size: 15.5px;
     color: var(--sb-ink);
@@ -104,7 +127,7 @@
 }
 
 .sidebar-brand-tag {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 10.5px;
     color: var(--sb-muted);
     letter-spacing: 0.02em;
@@ -148,7 +171,7 @@
 
 .sidebar-group-label {
     display: block;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 10.5px;
     font-weight: 500;
     letter-spacing: 0.1em;
@@ -186,7 +209,7 @@
 
 .sidebar-link:hover {
     color: var(--sb-ink);
-    background: rgba(17, 19, 26, 0.035);
+    background: rgba(127, 135, 155, 0.1);
     transform: translateX(2px);
 }
 
@@ -238,8 +261,8 @@
     top: 50%;
     transform: translate(-6px, -50%);
     background: var(--sb-ink);
-    color: #FFFFFF;
-    font-family: 'Inter', sans-serif;
+    color: #ffffff;
+    font-family: "Inter", sans-serif;
     font-size: 12.5px;
     font-weight: 500;
     padding: 6px 10px;
@@ -276,7 +299,7 @@
 }
 
 .sidebar-user:hover {
-    background: rgba(17, 19, 26, 0.035);
+    background: rgba(127, 135, 155, 0.1);
 }
 
 .sidebar--collapsed .sidebar-user {
@@ -289,9 +312,9 @@
     height: 34px;
     flex-shrink: 0;
     border-radius: 50%;
-    background: linear-gradient(140deg, #FFB199 0%, #D97757 100%);
-    color: #FFFFFF;
-    font-family: 'IBM Plex Mono', monospace;
+    background: linear-gradient(140deg, #ffb199 0%, #d97757 100%);
+    color: #ffffff;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 12px;
     font-weight: 600;
     display: flex;
@@ -317,7 +340,7 @@
 }
 
 .sidebar-user-role {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: "IBM Plex Mono", monospace;
     font-size: 10.5px;
     color: var(--sb-muted);
     margin-top: 1px;
@@ -342,7 +365,7 @@
 
 .sidebar-logout:hover {
     background: rgba(239, 68, 68, 0.1);
-    color: #EF4444;
+    color: #ef4444;
 }
 
 .sidebar-toggle {
@@ -355,7 +378,7 @@
     background: transparent;
     border-radius: 11px;
     color: var(--sb-muted);
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     font-size: 12.5px;
     font-weight: 500;
     cursor: pointer;
@@ -365,7 +388,7 @@
 }
 
 .sidebar-toggle:hover {
-    background: rgba(17, 19, 26, 0.035);
+    background: rgba(127, 135, 155, 0.1);
     color: var(--sb-ink);
 }
 

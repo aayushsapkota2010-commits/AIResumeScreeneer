@@ -16,4 +16,32 @@
     padding: 35px;
     flex: 1;
     overflow: auto;
+}.layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--app-bg, #f8fafc);
+    color: var(--app-text, #0f172a);
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    background: var(--app-bg, #f8fafc);
+}
+
+.page {
+    padding: 35px;
+    flex: 1;
+    overflow: auto;
+    background: var(--app-bg, #f8fafc);
+    color: var(--app-text, #0f172a);
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
 }
