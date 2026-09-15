@@ -19,6 +19,7 @@ import com.example.AIResumeScreeneer.entity.CandidateStatus;
 public class ResumeService {
 
     private final ResumeRepository resumeRepository;
+    private final NotificationService notificationService;
 
     private final String UPLOAD_DIR = "uploads/";
     private final AtsService atsService;
@@ -114,16 +115,23 @@ System.out.println("Suggestions = " + suggestions);
 
                 resume.setStatus(CandidateStatus.APPLIED);
 
+        Resume savedResume =
         resumeRepository.save(resume);
-       activityLogService.saveLog(
 
+activityLogService.saveLog(
         "aayush@gmail.com",
+        "RESUME_UPLOADED",
+        savedResume.getId(),
+        savedResume.getFileName()
+);
 
-        "STATUS_CHANGED_TO_" + status,
-
-        resume.getId(),
-
-        resume.getFileName()
+notificationService.createNotification(
+        "aayush@gmail.com",
+        "New resume submitted",
+        savedResume.getFileName()
+                + " was uploaded and ATS score generated.",
+        "RESUME_UPLOADED",
+        savedResume.getId()
 );
 
         return "Resume Uploaded Successfully";

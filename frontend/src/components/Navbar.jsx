@@ -28,7 +28,8 @@ function Navbar() {
     const [userName, setUserName] = useState(
         localStorage.getItem("name") || ""
     );
-
+const [notifications, setNotifications] = useState([]);
+const [unreadCount, setUnreadCount] = useState(0);
     const [userRole, setUserRole] = useState(
         localStorage.getItem("role") || ""
     );
@@ -106,26 +107,184 @@ function Navbar() {
         };
     }, []);
 
-    const notifications = [
-        {
-            id: 1,
-            title: "New resume submitted",
-            detail: "Priya Sharma applied for Frontend Engineer",
-            time: "2m ago"
-        },
-        {
-            id: 2,
-            title: "ATS score ready",
-            detail: "Scoring completed for 12 resumes",
-            time: "1h ago"
-        },
-        {
-            id: 3,
-            title: "Pipeline update",
-            detail: "3 candidates moved to Interview stage",
-            time: "3h ago"
+    useEffect(() => {
+    if (!userName) {
+        return;
+    }
+
+    const email =
+        localStorage.getItem("email") || "aayush@gmail.com";
+
+    const loadNotifications = async () => {
+        try {
+            const response =
+                await api.get(
+                    `/notifications?email=${encodeURIComponent(email)}`
+                );
+
+            setNotifications(response.data);
+
+            const unread =
+                response.data.filter(
+                    (notification) =>
+                        !notification.read
+                ).length;
+
+            setUnreadCount(unread);
+
+        } catch (error) {
+            console.error(
+                "Failed to load notifications:",
+                error
+            );
         }
-    ];
+    };
+
+    loadNotifications();
+}, [userName]);
+
+
+useEffect(() => {
+    const email =
+        localStorage.getItem("email") || "aayush@gmail.com";
+
+    if (!email) {
+        return;
+    }
+
+    let controller = new AbortController();
+
+    const connectNotifications = async () => {
+        try {
+
+            const token =
+                localStorage.getItem("token");
+
+            const response =
+                await fetch(
+                    `${import.meta.env.VITE_API_URL}/notifications/stream?email=${encodeURIComponent(email)}`,
+                    {
+                        headers: {
+                            Authorization:
+                                `Bearer ${token}`
+                        },
+                        signal: controller.signal
+                    }
+                );
+
+            if (!response.ok) {
+                throw new Error(
+                    `Notification stream failed: ${response.status}`
+                );
+            }
+
+            const reader =
+                response.body.getReader();
+
+            const decoder =
+                new TextDecoder();
+
+            let buffer = "";
+
+            while (true) {
+
+                const {
+                    value,
+                    done
+                } = await reader.read();
+
+                if (done) {
+                    break;
+                }
+
+                buffer +=
+                    decoder.decode(
+                        value,
+                        {
+                            stream: true
+                        }
+                    );
+
+                const events =
+                    buffer.split("\n\n");
+
+                buffer =
+                    events.pop() || "";
+
+                for (const event of events) {
+
+                    const lines =
+                        event.split("\n");
+
+                    let eventName = "";
+                    let data = "";
+
+                    for (const line of lines) {
+
+                        if (
+                            line.startsWith("event:")
+                        ) {
+                            eventName =
+                                line
+                                    .substring(6)
+                                    .trim();
+                        }
+
+                        if (
+                            line.startsWith("data:")
+                        ) {
+                            data +=
+                                line
+                                    .substring(5)
+                                    .trim();
+                        }
+                    }
+
+                    if (
+                        eventName ===
+                        "notification" &&
+                        data
+                    ) {
+
+                        const notification =
+                            JSON.parse(data);
+
+                        setNotifications(
+                            (previous) => [
+                                notification,
+                                ...previous
+                            ]
+                        );
+
+                        setUnreadCount(
+                            (previous) =>
+                                previous + 1
+                        );
+                    }
+                }
+            }
+
+        } catch (error) {
+
+            if (
+                error.name !==
+                "AbortError"
+            ) {
+                console.error(
+                    "Notification stream error:",
+                    error
+                );
+            }
+        }
+    };
+
+    connectNotifications();
+
+    return () => {
+        controller.abort();
+    };
+
+}, []);
 
     const initials = userName
         ? userName
@@ -225,19 +384,24 @@ function Navbar() {
                     ref={notifRef}
                 >
                     <button
-                        type="button"
-                        className="navbar-icon-btn"
-                        aria-label="Notifications"
-                        onClick={() => {
-                            setNotifOpen(
-                                (prev) => !prev
-                            );
-                            setProfileOpen(false);
-                        }}
-                    >
-                        <Bell size={18} />
-                        <span className="navbar-badge" />
-                    </button>
+    type="button"
+    className="navbar-icon-btn"
+    aria-label="Notifications"
+    onClick={() => {
+        setNotifOpen((prev) => !prev);
+        setProfileOpen(false);
+    }}
+>
+    <Bell size={18} />
+
+    {unreadCount > 0 && (
+        <span className="navbar-badge">
+            {unreadCount > 99
+                ? "99+"
+                : unreadCount}
+        </span>
+    )}
+</button>
 
                     {notifOpen && (
                         <div className="navbar-dropdown navbar-dropdown--notif">
@@ -247,48 +411,94 @@ function Navbar() {
                                     Notifications
                                 </span>
 
-                                <button
-                                    type="button"
-                                    className="navbar-link-btn"
-                                >
-                                    Mark all read
-                                </button>
+                              <button
+    type="button"
+    className="navbar-link-btn"
+    onClick={async () => {
+        try {
+
+            const email =
+                localStorage.getItem("email")
+                || "aayush@gmail.com";
+
+            await api.post(
+                `/notifications/read-all?email=${encodeURIComponent(email)}`
+            );
+
+            setNotifications(
+                (previous) =>
+                    previous.map(
+                        (notification) => ({
+                            ...notification,
+                            read: true
+                        })
+                    )
+            );
+
+            setUnreadCount(0);
+
+        } catch (error) {
+            console.error(
+                "Failed to mark notifications as read:",
+                error
+            );
+        }
+    }}
+>
+    Mark all read
+</button>
                             </div>
 
                             <div className="navbar-notif-list">
 
-                                {notifications.map(
-                                    (notification) => (
-                                        <div
-                                            className="navbar-notif-item"
-                                            key={
-                                                notification.id
-                                            }
-                                        >
-                                            <span className="navbar-notif-dot" />
+                                {notifications.length === 0 ? (
+    <div className="navbar-notif-empty">
+        No notifications
+    </div>
+) : (
+    notifications.map(
+        (notification) => (
+            <div
+                className={`navbar-notif-item ${
+                    notification.read
+                        ? "navbar-notif-item--read"
+                        : ""
+                }`}
+                key={notification.id}
+            >
 
-                                            <div className="navbar-notif-body">
-                                                <p className="navbar-notif-title">
-                                                    {
-                                                        notification.title
-                                                    }
-                                                </p>
+                {!notification.read && (
+                    <span className="navbar-notif-dot" />
+                )}
 
-                                                <p className="navbar-notif-detail">
-                                                    {
-                                                        notification.detail
-                                                    }
-                                                </p>
-                                            </div>
+                <div className="navbar-notif-body">
 
-                                            <span className="navbar-notif-time">
-                                                {
-                                                    notification.time
-                                                }
-                                            </span>
-                                        </div>
-                                    )
-                                )}
+                    <p className="navbar-notif-title">
+                        {notification.title}
+                    </p>
+
+                    <p className="navbar-notif-detail">
+                        {notification.message}
+                    </p>
+
+                </div>
+
+                <span className="navbar-notif-time">
+                    {new Date(
+                        notification.createdAt
+                    ).toLocaleTimeString(
+                        [],
+                        {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        }
+                    )}
+                </span>
+
+            </div>
+        )
+    )
+)}
 
                             </div>
 

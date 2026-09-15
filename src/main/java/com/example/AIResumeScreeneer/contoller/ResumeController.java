@@ -20,6 +20,7 @@ import com.example.AIResumeScreeneer.service.JobRecommendationService;
 import com.example.AIResumeScreeneer.service.KanbanService;
 import com.example.AIResumeScreeneer.service.KeywordGapService;
 import com.example.AIResumeScreeneer.service.MockInterviewService;
+import com.example.AIResumeScreeneer.service.NotificationService;
 import com.example.AIResumeScreeneer.service.RankingService;
 import com.example.AIResumeScreeneer.service.RecruiterAnalyticsService;
 import com.example.AIResumeScreeneer.service.RecruiterDashboardService;
@@ -114,6 +115,7 @@ public class ResumeController {
     private final CandidateDashboardService  candidateDashboardService;
         private final KanbanService kanbanService;
         private final ResumeChatService resumeChatService;
+        private final NotificationService notificationService;
 
   @PostMapping("/upload")
 public String uploadResume(
@@ -346,6 +348,16 @@ public Resume updateStatus(
         resume.getId(),
         resume.getFileName()
 );
+notificationService.createNotification(
+        "aayush@gmail.com",
+        "Candidate status updated",
+        resume.getFileName()
+                + " moved to "
+                + status.name()
+                + " stage.",
+        "STATUS_CHANGED",
+        resume.getId()
+);
 
     if(updatedResume.getCandidateEmail() != null) {
 
@@ -491,16 +503,14 @@ public String sendInterviewInvite(
 
 );
 
-    activityLogService.saveLog(
-
-            "aayush@gmail.com",
-
-            "INTERVIEW_INVITE_SENT",
-
-            resume.getId(),
-
-            resume.getFileName()
-    );
+    notificationService.createNotification(
+        "aayush@gmail.com",
+        "Interview invite sent",
+        "Interview invitation sent for "
+                + resume.getFileName(),
+        "INTERVIEW_INVITE",
+        resume.getId()
+);
 
     return "Interview Invite Sent";
 }

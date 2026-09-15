@@ -1,0 +1,502 @@
+.resume-page {
+    min-height: 100%;
+    background: #fafaf8;
+    color: #0f172a;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.resume-container {
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 42px 34px 70px;
+}
+
+.resume-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+    margin-bottom: 32px;
+}
+
+.resume-eyebrow {
+    margin: 0 0 10px;
+    color: #4f46e5;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+}
+
+.resume-title {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -1px;
+}
+
+.resume-subtitle {
+    margin: 11px 0 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.resume-count-card {
+    min-width: 130px;
+    padding: 15px 18px;
+    border: 1px solid #e5e1d8;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+}
+
+.resume-count-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #94a3b8;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+
+.resume-count-value {
+    display: block;
+    color: #0f172a;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.resume-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.resume-search {
+    height: 46px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #94a3b8;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.resume-search:focus-within {
+    border-color: #c7c4fa;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+}
+
+.resume-search input {
+    width: 100%;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #1e293b;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.resume-search input::placeholder {
+    color: #94a3b8;
+}
+
+.resume-filter {
+    height: 46px;
+    min-width: 170px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #64748b;
+}
+
+.resume-filter select {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #334155;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.resume-results-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 34px;
+    margin-bottom: 12px;
+}
+
+.resume-results-number {
+    margin-right: 5px;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.resume-results-text {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.resume-clear-btn {
+    padding: 5px 9px;
+    border: none;
+    background: transparent;
+    color: #4f46e5;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.resume-clear-btn:hover {
+    color: #3730a3;
+}
+
+.resume-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.resume-card {
+    border: 1px solid #e5e1d8;
+    border-radius: 17px;
+    background: #ffffff;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.025);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.resume-card:hover {
+    transform: translateY(-2px);
+    border-color: #d9d6ce;
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.07);
+}
+
+.resume-card-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 22px 17px;
+}
+
+.resume-file-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: rgba(79, 70, 229, 0.09);
+    color: #4f46e5;
+}
+
+.resume-file-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.resume-file-name {
+    margin: 0;
+    overflow: hidden;
+    color: #172033;
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resume-file-id {
+    margin: 5px 0 0;
+    color: #94a3b8;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+}
+
+.resume-card-status {
+    flex-shrink: 0;
+}
+
+.resume-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 86px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.resume-status--applied {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.resume-status--screening {
+    background: rgba(79, 70, 229, 0.09);
+    color: #4f46e5;
+}
+
+.resume-status--shortlisted {
+    background: rgba(101, 160, 136, 0.13);
+    color: #4d806c;
+}
+
+.resume-status--interview {
+    background: rgba(217, 119, 87, 0.12);
+    color: #c05f3e;
+}
+
+.resume-status--selected {
+    background: rgba(34, 197, 94, 0.11);
+    color: #15803d;
+}
+
+.resume-status--rejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.resume-card-divider {
+    height: 1px;
+    background: #f0eee9;
+}
+
+.resume-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+    padding: 15px 22px 17px;
+}
+
+.resume-metrics {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.resume-metric {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.resume-metric-label {
+    color: #94a3b8;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+}
+
+.resume-score {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.resume-score--high {
+    color: #4d806c;
+}
+
+.resume-score--medium {
+    color: #c05f3e;
+}
+
+.resume-score--low {
+    color: #64748b;
+}
+
+.resume-metric-divider {
+    width: 1px;
+    height: 22px;
+    background: #e5e1d8;
+}
+
+.resume-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.resume-action {
+    min-height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 12px;
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+    box-sizing: border-box;
+}
+
+.resume-action:hover {
+    transform: translateY(-1px);
+}
+
+.resume-action--secondary {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+}
+
+.resume-action--secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.resume-action--primary {
+    border: 1px solid #4f46e5;
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+.resume-action--primary:hover {
+    background: #4338ca;
+    border-color: #4338ca;
+}
+
+.resume-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    padding: 40px;
+    border: 1px dashed #d9d6ce;
+    border-radius: 17px;
+    background: #ffffff;
+    text-align: center;
+}
+
+.resume-empty-icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    border-radius: 14px;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.resume-empty h3 {
+    margin: 0 0 6px;
+    color: #1e293b;
+    font-size: 15px;
+}
+
+.resume-empty p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+@media (max-width: 850px) {
+    .resume-container {
+        padding: 32px 22px 60px;
+    }
+
+    .resume-header {
+        align-items: flex-start;
+    }
+
+    .resume-title {
+        font-size: 36px;
+    }
+
+    .resume-card-bottom {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .resume-actions {
+        width: 100%;
+    }
+}
+
+@media (max-width: 620px) {
+    .resume-container {
+        padding: 26px 16px 50px;
+    }
+
+    .resume-header {
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .resume-count-card {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .resume-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .resume-filter {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .resume-card-main {
+        align-items: flex-start;
+    }
+
+    .resume-card-status {
+        margin-left: auto;
+    }
+
+    .resume-metrics {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .resume-actions {
+        flex-direction: column;
+    }
+
+    .resume-action {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .resume-card,
+    .resume-action,
+    .resume-search {
+        transition: none;
+    }
+}
