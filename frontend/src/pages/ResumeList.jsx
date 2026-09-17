@@ -5,7 +5,8 @@ import {
     ExternalLink,
     ArrowUpRight,
     Search,
-    SlidersHorizontal
+    SlidersHorizontal,
+    Trash2
 } from "lucide-react";
 import api from "../api/api";
 import "./ResumeList.css";
@@ -60,6 +61,40 @@ function ResumeList() {
 
         return matchesSearch && matchesStatus;
     });
+
+    const deleteResume = async (resumeId) => {
+
+    const confirmed = window.confirm(
+        "Are you sure you want to delete this resume?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await api.delete(`/resume/${resumeId}`);
+
+        // Remove from UI immediately
+        setResumes((previous) =>
+            previous.filter(
+                (resume) => resume.id !== resumeId
+            )
+        );
+
+        alert("Resume deleted successfully");
+
+    } catch (error) {
+
+        console.error(
+            "Failed to delete resume:",
+            error
+        );
+
+        alert("Failed to delete resume");
+    }
+};
 
     const openResume = (resumeId) => {
         window.open(
@@ -285,26 +320,35 @@ function ResumeList() {
 
                                         <div className="resume-actions">
 
-                                            <button
-                                                type="button"
-                                                className="resume-action resume-action--secondary"
-                                                onClick={() =>
-                                                    openResume(resume.id)
-                                                }
-                                            >
-                                                <ExternalLink size={15} />
-                                                View Resume
-                                            </button>
+    <button
+        type="button"
+        className="resume-action resume-action--secondary"
+        onClick={() =>
+            openResume(resume.id)
+        }
+    >
+        <ExternalLink size={15} />
+        View Resume
+    </button>
 
-                                            <Link
-                                                to={`/resume/${resume.id}`}
-                                                className="resume-action resume-action--primary"
-                                            >
-                                                View Details
-                                                <ArrowUpRight size={15} />
-                                            </Link>
+    <Link
+        to={`/resume/${resume.id}`}
+        className="resume-action resume-action--primary"
+    >
+        View Details
+        <ArrowUpRight size={15} />
+    </Link>
 
-                                        </div>
+    <button
+        type="button"
+        className="resume-action resume-action--delete"
+        onClick={() => deleteResume(resume.id)}
+    >
+        <Trash2 size={15} />
+        Delete
+    </button>
+
+</div>
 
                                     </div>
 

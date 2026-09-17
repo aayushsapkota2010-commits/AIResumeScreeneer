@@ -9,15 +9,7 @@ import com.example.AIResumeScreeneer.entity.Notification;
 public interface NotificationRepository
         extends JpaRepository<Notification, Long> {
 
-    List<Notification> findByRecipientEmailOrderByCreatedAtDesc(
-            String recipientEmail
-    );
+    List<Notification> findAllByOrderByCreatedAtDesc();
 
-    List<Notification> findByRecipientEmailAndReadFalseOrderByCreatedAtDesc(
-            String recipientEmail
-    );
-
-    long countByRecipientEmailAndReadFalse(
-            String recipientEmail
-    );
+    List<Notification> findByReadFalseOrderByCreatedAtDesc();
 }

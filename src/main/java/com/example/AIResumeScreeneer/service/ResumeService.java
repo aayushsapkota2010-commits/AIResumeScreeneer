@@ -4,34 +4,44 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
+import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.AIResumeScreeneer.entity.CandidateStatus;
 import com.example.AIResumeScreeneer.entity.Resume;
 import com.example.AIResumeScreeneer.repository.ResumeRepository;
-import org.apache.tika.Tika;
+
 import lombok.RequiredArgsConstructor;
-import com.example.AIResumeScreeneer.entity.CandidateStatus;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.AIResumeScreeneer.repository.ActivityLogRepository;
+import com.example.AIResumeScreeneer.repository.RecruiterNoteRepository;
 
 @Service
 @RequiredArgsConstructor
 public class ResumeService {
 
     private final ResumeRepository resumeRepository;
+
     private final NotificationService notificationService;
 
-    private final String UPLOAD_DIR = "uploads/";
     private final AtsService atsService;
+
     private final ActivityLogService activityLogService;
 
-    public String uploadResume(
-    MultipartFile file,
-    String candidateEmail
-)
-            throws IOException {
+    private final ActivityLogRepository activityLogRepository;
+private final RecruiterNoteRepository recruiterNoteRepository;
 
-        // Upload directory
+    public String uploadResume(
+            MultipartFile file,
+            String candidateEmail
+    ) throws IOException {
+
+        // ============================================================
+        // 1. Upload directory
+        // ============================================================
+
         String uploadDir =
                 System.getProperty("user.home")
                         + File.separator
@@ -43,7 +53,10 @@ public class ResumeService {
             directory.mkdirs();
         }
 
-        // Unique file name
+        // ============================================================
+        // 2. Create unique file name
+        // ============================================================
+
         String fileName =
                 System.currentTimeMillis()
                         + "_"
@@ -52,174 +65,210 @@ public class ResumeService {
         File destination =
                 new File(directory, fileName);
 
-        System.out.println("Upload Directory = " + uploadDir);
-        System.out.println("Destination = " + destination.getAbsolutePath());
+        System.out.println(
+                "Upload Directory = "
+                        + uploadDir
+        );
 
-        // Save file
+        System.out.println(
+                "Destination = "
+                        + destination.getAbsolutePath()
+        );
+
+        // ============================================================
+        // 3. Save uploaded file
+        // ============================================================
+
         file.transferTo(destination);
 
-        // Extract Resume Text
+        // ============================================================
+        // 4. Extract resume text using Apache Tika
+        // ============================================================
+
         String extractedText = "";
 
         try {
-            Tika tika = new Tika();
-            extractedText = tika.parseToString(destination);
 
-            System.out.println("===== EXTRACTED RESUME TEXT =====");
+            Tika tika = new Tika();
+
+            extractedText =
+                    tika.parseToString(destination);
+
+            System.out.println(
+                    "===== EXTRACTED RESUME TEXT ====="
+            );
+
             System.out.println(extractedText);
 
         } catch (Exception e) {
+
             e.printStackTrace();
+
         }
 
-        System.out.println("=================================");
-System.out.println("Extracted Text Length = "
-        + extractedText.length());
+        System.out.println(
+                "================================="
+        );
 
-System.out.println(
-        extractedText.substring(
-                0,
-                Math.min(500, extractedText.length())
-        )
-);
-System.out.println("=================================");
+        System.out.println(
+                "Extracted Text Length = "
+                        + extractedText.length()
+        );
 
-        // ATS Analysis
+        System.out.println(
+                "================================="
+        );
+
+        // ============================================================
+        // 5. ATS Analysis
+        // ============================================================
+
         int score =
-                atsService.calculateScore(extractedText);
+                atsService.calculateScore(
+                        extractedText
+                );
 
         String skills =
-                atsService.extractSkills(extractedText);
+                atsService.extractSkills(
+                        extractedText
+                );
 
-        String suggestions =
-                atsService.generateSuggestions(score);
-                System.out.println("ATS Score = " + score);
-System.out.println("Skills = " + skills);
-System.out.println("Suggestions = " + suggestions);
+       String suggestions =
+        atsService.generateSuggestions(
+                score
+        );
 
-        // Save Resume
-        Resume resume = Resume.builder()
-                .fileName(fileName)
-                .filePath(destination.getAbsolutePath())
-                .contentType(file.getContentType())
-                .fileSize(file.getSize())
-                 .candidateEmail(candidateEmail)
-                .uploadedAt(LocalDateTime.now())
-                .extractedText(extractedText)
-                .atsScore(score)
-                .skills(skills)
-                .suggestions(suggestions)
-                .build();
-                CandidateStatus status = CandidateStatus.APPLIED;
+        System.out.println(
+                "ATS Score = "
+                        + score
+        );
 
+        System.out.println(
+                "Skills = "
+                        + skills
+        );
 
-                resume.setStatus(CandidateStatus.APPLIED);
+        System.out.println(
+                "Suggestions = "
+                        + suggestions
+        );
+
+        // ============================================================
+        // 6. Create Resume entity
+        // ============================================================
+
+        Resume resume =
+                Resume.builder()
+                        .fileName(fileName)
+                        .filePath(
+                                destination
+                                        .getAbsolutePath()
+                        )
+                        .contentType(
+                                file.getContentType()
+                        )
+                        .fileSize(
+                                file.getSize()
+                        )
+                        .candidateEmail(
+                                candidateEmail
+                        )
+                        .uploadedAt(
+                                LocalDateTime.now()
+                        )
+                        .extractedText(
+                                extractedText
+                        )
+                        .atsScore(score)
+                        .skills(skills)
+                        .suggestions(suggestions)
+                        .build();
+
+        // ============================================================
+        // 7. Set initial candidate status
+        // ============================================================
+
+        resume.setStatus(
+                CandidateStatus.APPLIED
+        );
+
+        // ============================================================
+        // 8. Save Resume in database
+        // ============================================================
 
         Resume savedResume =
-        resumeRepository.save(resume);
+                resumeRepository.save(resume);
 
-activityLogService.saveLog(
-        "aayush@gmail.com",
-        "RESUME_UPLOADED",
-        savedResume.getId(),
-        savedResume.getFileName()
-);
+        // ============================================================
+        // 9. Activity log
+        // ============================================================
 
-notificationService.createNotification(
-        "aayush@gmail.com",
-        "New resume submitted",
-        savedResume.getFileName()
-                + " was uploaded and ATS score generated.",
-        "RESUME_UPLOADED",
-        savedResume.getId()
-);
+        activityLogService.saveLog(
+                "aayush@gmail.com",
+                "RESUME_UPLOADED",
+                savedResume.getId(),
+                savedResume.getFileName()
+        );
+
+        // ============================================================
+        // 10. Create notification
+        // ============================================================
+
+        notificationService.createNotification(
+                "New resume submitted",
+                savedResume.getFileName()
+                        + " was uploaded and ATS score generated.",
+                "RESUME_UPLOADED"
+        );
+
+        // ============================================================
+        // 11. Return response
+        // ============================================================
 
         return "Resume Uploaded Successfully";
     }
 
-public int calculateScore(String text) {
+   @Transactional
+public void deleteResume(Long id) throws IOException {
 
-    System.out.println("===== ATS SERVICE =====");
+    Resume resume =
+            resumeRepository.findById(id)
+                    .orElseThrow(() ->
+                            new RuntimeException("Resume not found"));
 
-    if(text == null){
-        System.out.println("TEXT IS NULL");
-        return 0;
+    // 1. Delete activity logs related to this resume
+    activityLogRepository.deleteByResumeId(id);
+
+    // 2. Delete recruiter notes related to this resume
+    recruiterNoteRepository.deleteByResumeId(id);
+
+    // 3. Delete resume from database
+    resumeRepository.delete(resume);
+
+    // 4. Delete physical PDF file
+    if (resume.getFilePath() != null) {
+
+        File file = new File(resume.getFilePath());
+
+        if (file.exists()) {
+
+            boolean deleted = file.delete();
+
+            System.out.println(
+                    "Resume physical file deleted = " + deleted
+            );
+
+        } else {
+
+            System.out.println(
+                    "Resume physical file not found: "
+                            + resume.getFilePath()
+            );
+        }
     }
 
-    System.out.println("TEXT LENGTH = " + text.length());
-
-    String lower = text.toLowerCase();
-
-    System.out.println("Contains Java = "
-            + lower.contains("java"));
-
-    System.out.println("Contains Spring = "
-            + lower.contains("spring"));
-
-    System.out.println("Contains MySQL = "
-            + lower.contains("mysql"));
-
-    System.out.println("Contains MongoDB = "
-            + lower.contains("mongodb"));
-
-    int score = 0;
-
-    if(lower.contains("java")) score += 15;
-    if(lower.contains("spring")) score += 20;
-    if(lower.contains("mysql")) score += 10;
-    if(lower.contains("mongodb")) score += 10;
-    if(lower.contains("rest")) score += 10;
-    if(lower.contains("git")) score += 10;
-    if(lower.contains("github")) score += 10;
-
-    System.out.println("FINAL SCORE = " + score);
-
-    return score;
-}
-
-public String extractSkills(String text) {
-
-    StringBuilder skills = new StringBuilder();
-
-    String lower = text.toLowerCase();
-
-    if(lower.contains("java"))
-        skills.append("Java,");
-
-    if(lower.contains("spring"))
-        skills.append("Spring Boot,");
-
-    if(lower.contains("mysql"))
-        skills.append("MySQL,");
-
-    if(lower.contains("react"))
-        skills.append("React,");
-
-    if(lower.contains("docker"))
-        skills.append("Docker,");
-
-    if(lower.contains("aws"))
-        skills.append("AWS,");
-
-    return skills.toString();
-}
-
-public String generateSuggestions(String text) {
-
-    StringBuilder suggestions =
-            new StringBuilder();
-
-    String lower = text.toLowerCase();
-
-    if(!lower.contains("docker"))
-        suggestions.append("Learn Docker. ");
-
-    if(!lower.contains("aws"))
-        suggestions.append("Add AWS experience. ");
-
-    if(!lower.contains("microservices"))
-        suggestions.append("Mention Microservices projects. ");
-
-    return suggestions.toString();
+    System.out.println(
+            "Resume and related data deleted. ID = " + id
+    );
 }
 }

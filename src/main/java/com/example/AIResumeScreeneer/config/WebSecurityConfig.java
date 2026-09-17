@@ -2,6 +2,7 @@ package com.example.AIResumeScreeneer.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -23,49 +24,107 @@ public class WebSecurityConfig {
 
         http
 
+            // =========================================================
             // CORS
+            // =========================================================
             .cors(cors -> {})
 
-            // Disable CSRF because JWT is being used
+            // =========================================================
+            // CSRF
+            // =========================================================
             .csrf(csrf -> csrf.disable())
 
-            // Stateless authentication
+            // =========================================================
+            // STATELESS JWT
+            // =========================================================
             .sessionManagement(session ->
                 session.sessionCreationPolicy(
                     SessionCreationPolicy.STATELESS
                 )
             )
 
-            // Authorization rules
+            // =========================================================
+            // AUTHORIZATION
+            // =========================================================
             .authorizeHttpRequests(auth -> auth
 
-                // Authentication APIs
+                // Preflight requests
+                .requestMatchers(
+                    HttpMethod.OPTIONS,
+                    "/**"
+                ).permitAll()
+
+                // =====================================================
+                // AUTH
+                // =====================================================
                 .requestMatchers(
                     "/api/auth/**"
                 ).permitAll()
 
-                // Resume viewing
+                // =====================================================
+                // WEBSOCKET
+                // =====================================================
+                .requestMatchers(
+                    "/ws",
+                    "/ws/**"
+                ).permitAll()
+
+                // =====================================================
+                // PUBLIC RESUME VIEW
+                // =====================================================
                 .requestMatchers(
                     "/api/resume/view/**"
                 ).permitAll()
 
-                // ADMIN ONLY
+                // =====================================================
+                // NOTIFICATIONS
+                // ADMIN + USER
+                // =====================================================
                 .requestMatchers(
-                    "/api/admin/**",
+                    "/api/notifications/**"
+                ).hasAnyRole("ADMIN", "USER")
+
+                // =====================================================
+                // USER PROFILE
+                // ADMIN + USER
+                // =====================================================
+                .requestMatchers(
+                    "/api/user/profile",
+                    "/api/user/change-password"
+                ).hasAnyRole("ADMIN", "USER")
+
+                // =====================================================
+                // ALL USERS
+                // ADMIN ONLY
+                // =====================================================
+                .requestMatchers(
                     "/api/user/all"
                 ).hasRole("ADMIN")
 
+                // =====================================================
+                // RESUME APIs
                 // ADMIN + USER
+                // =====================================================
                 .requestMatchers(
                     "/api/resume/**"
                 ).hasAnyRole("ADMIN", "USER")
 
-                // Everything else
-                .anyRequest()
-                .authenticated()
+                // =====================================================
+                // ADMIN APIs
+                // =====================================================
+                .requestMatchers(
+                    "/api/admin/**"
+                ).hasRole("ADMIN")
+
+                // =====================================================
+                // EVERYTHING ELSE
+                // =====================================================
+                .anyRequest().authenticated()
             )
 
-            // JWT filter
+            // =========================================================
+            // JWT FILTER
+            // =========================================================
             .addFilterBefore(
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class

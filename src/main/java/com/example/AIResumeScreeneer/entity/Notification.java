@@ -29,15 +29,11 @@ public class Notification {
 
     private String title;
 
-    private String message;
+    private String detail;
 
     private String type;
 
-    private Boolean read;
-
-    private String recipientEmail;
-
-    private Long resumeId;
+    private boolean read;
 
     private LocalDateTime createdAt;
 }

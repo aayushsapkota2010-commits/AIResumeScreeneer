@@ -500,3 +500,14 @@
         transition: none;
     }
 }
+
+.resume-action--delete {
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    color: #dc2626;
+}
+
+.resume-action--delete:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+}

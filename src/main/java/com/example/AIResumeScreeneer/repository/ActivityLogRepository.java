@@ -14,4 +14,5 @@ public interface ActivityLogRepository
     List<ActivityLog> findByResumeIdOrderByActionTimeDesc(
             Long resumeId
     );
+    void deleteByResumeId(Long resumeId);
 }

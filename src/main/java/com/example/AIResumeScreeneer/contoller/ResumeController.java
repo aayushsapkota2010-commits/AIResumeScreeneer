@@ -128,6 +128,30 @@ public String uploadResume(
             candidateEmail
     );
 }
+
+@DeleteMapping("/{id}")
+public ResponseEntity<String> deleteResume(
+        @PathVariable Long id) {
+
+    try {
+
+        resumeService.deleteResume(id);
+
+        return ResponseEntity.ok(
+                "Resume deleted successfully"
+        );
+
+    } catch (IOException e) {
+
+        return ResponseEntity.internalServerError()
+                .body("Failed to delete resume file");
+
+    } catch (RuntimeException e) {
+
+        return ResponseEntity.notFound()
+                .build();
+    }
+}
   @GetMapping("/{id}")
     public Resume getResume(
             @PathVariable Long id) {
@@ -333,6 +357,9 @@ public Resume updateStatus(
             resumeRepository.findById(id)
                     .orElseThrow();
 
+    CandidateStatus oldStatus =
+            resume.getStatus();
+
     CandidateStatus status =
             CandidateStatus.valueOf(
                     request.getStatus());
@@ -342,24 +369,44 @@ public Resume updateStatus(
     Resume updatedResume =
             resumeRepository.save(resume);
 
-           activityLogService.saveLog(
-        "aayush@gmail.com",
-        "STATUS_CHANGED_TO_" + status,
-        resume.getId(),
-        resume.getFileName()
-);
-notificationService.createNotification(
-        "aayush@gmail.com",
-        "Candidate status updated",
-        resume.getFileName()
-                + " moved to "
-                + status.name()
-                + " stage.",
-        "STATUS_CHANGED",
-        resume.getId()
-);
+    activityLogService.saveLog(
+            "aayush@gmail.com",
+            "STATUS_CHANGED_TO_" + status,
+            resume.getId(),
+            resume.getFileName()
+    );
 
-    if(updatedResume.getCandidateEmail() != null) {
+    if (oldStatus != status) {
+
+    System.out.println("=================================");
+    System.out.println("CREATING NOTIFICATION");
+    System.out.println("Old Status = " + oldStatus);
+    System.out.println("New Status = " + status);
+    System.out.println("Resume = " + resume.getFileName());
+    System.out.println("=================================");
+
+    notificationService.createNotification(
+            "Candidate status updated",
+            resume.getFileName()
+                    + " moved from "
+                    + (oldStatus != null
+                            ? oldStatus.name()
+                            : "NEW")
+                    + " to "
+                    + status.name(),
+            "STATUS_CHANGE"
+    );
+
+} else {
+
+    System.out.println("=================================");
+    System.out.println("NO NOTIFICATION CREATED");
+    System.out.println("Old Status = " + oldStatus);
+    System.out.println("New Status = " + status);
+    System.out.println("=================================");
+}
+
+    if (updatedResume.getCandidateEmail() != null) {
 
         emailService.sendStatusUpdateEmail(
                 updatedResume.getCandidateEmail(),
@@ -473,9 +520,7 @@ public ResponseEntity<Resource> viewResume(
 }
 @PostMapping("/interview-invite/{id}")
 public String sendInterviewInvite(
-
         @PathVariable Long id,
-
         @RequestBody InterviewInviteRequest request) {
 
     Resume resume =
@@ -483,34 +528,23 @@ public String sendInterviewInvite(
                     .findById(id)
                     .orElseThrow();
 
-   emailService.sendInterviewInvitation(
-
-        resume.getCandidateEmail(),
-
-        resume.getCandidateEmail().split("@")[0],
-
-        request.getInterviewer(),
-
-        request.getInterviewDate(),
-
-        request.getInterviewTime(),
-
-        request.getMode(),
-
-        request.getMeetingLink(),
-
-        request.getLocation()
-
-);
+    emailService.sendInterviewInvitation(
+            resume.getCandidateEmail(),
+            resume.getCandidateEmail().split("@")[0],
+            request.getInterviewer(),
+            request.getInterviewDate(),
+            request.getInterviewTime(),
+            request.getMode(),
+            request.getMeetingLink(),
+            request.getLocation()
+    );
 
     notificationService.createNotification(
-        "aayush@gmail.com",
-        "Interview invite sent",
-        "Interview invitation sent for "
-                + resume.getFileName(),
-        "INTERVIEW_INVITE",
-        resume.getId()
-);
+            "Interview invite sent",
+            "Interview invitation sent for "
+                    + resume.getFileName(),
+            "INTERVIEW_INVITE"
+    );
 
     return "Interview Invite Sent";
 }

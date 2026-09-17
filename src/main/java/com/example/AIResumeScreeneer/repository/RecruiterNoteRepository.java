@@ -10,4 +10,5 @@ public interface RecruiterNoteRepository
         extends JpaRepository<RecruiterNote, Long> {
 
     List<RecruiterNote> findByResumeId(Long resumeId);
+    void deleteByResumeId(Long resumeId);
 }

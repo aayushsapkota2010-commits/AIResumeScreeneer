@@ -9,6 +9,7 @@ import {
     Settings as SettingsIcon,
     LogOut
 } from "lucide-react";
+import { Client } from "@stomp/stompjs";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import "./Navbar.css";
@@ -28,11 +29,12 @@ function Navbar() {
     const [userName, setUserName] = useState(
         localStorage.getItem("name") || ""
     );
-const [notifications, setNotifications] = useState([]);
-const [unreadCount, setUnreadCount] = useState(0);
+
     const [userRole, setUserRole] = useState(
         localStorage.getItem("role") || ""
     );
+
+    const [notifications, setNotifications] = useState([]);
 
     const notifRef = useRef(null);
     const profileRef = useRef(null);
@@ -107,30 +109,14 @@ const [unreadCount, setUnreadCount] = useState(0);
         };
     }, []);
 
-    useEffect(() => {
-    if (!userName) {
-        return;
-    }
-
-    const email =
-        localStorage.getItem("email") || "aayush@gmail.com";
+  useEffect(() => {
+    let client = null;
 
     const loadNotifications = async () => {
         try {
-            const response =
-                await api.get(
-                    `/notifications?email=${encodeURIComponent(email)}`
-                );
+            const response = await api.get("/notifications");
 
-            setNotifications(response.data);
-
-            const unread =
-                response.data.filter(
-                    (notification) =>
-                        !notification.read
-                ).length;
-
-            setUnreadCount(unread);
+            setNotifications(response.data || []);
 
         } catch (error) {
             console.error(
@@ -141,113 +127,49 @@ const [unreadCount, setUnreadCount] = useState(0);
     };
 
     loadNotifications();
-}, [userName]);
 
+    const apiUrl =
+        import.meta.env.VITE_API_URL;
 
-useEffect(() => {
-    const email =
-        localStorage.getItem("email") || "aayush@gmail.com";
-
-    if (!email) {
+    if (!apiUrl) {
+        console.error(
+            "VITE_API_URL is not configured."
+        );
         return;
     }
 
-    let controller = new AbortController();
+    const wsUrl =
+        apiUrl
+            .replace(/^http:/, "ws:")
+            .replace(/^https:/, "wss:")
+            .replace(/\/api\/?$/, "") + "/ws";
 
-    const connectNotifications = async () => {
-        try {
+    console.log(
+        "Notification WebSocket URL:",
+        wsUrl
+    );
 
-            const token =
-                localStorage.getItem("token");
+    client = new Client({
+        brokerURL: wsUrl,
 
-            const response =
-                await fetch(
-                    `${import.meta.env.VITE_API_URL}/notifications/stream?email=${encodeURIComponent(email)}`,
-                    {
-                        headers: {
-                            Authorization:
-                                `Bearer ${token}`
-                        },
-                        signal: controller.signal
-                    }
-                );
+        reconnectDelay: 5000,
 
-            if (!response.ok) {
-                throw new Error(
-                    `Notification stream failed: ${response.status}`
-                );
-            }
+        onConnect: () => {
+            console.log(
+                "Notification WebSocket connected"
+            );
 
-            const reader =
-                response.body.getReader();
-
-            const decoder =
-                new TextDecoder();
-
-            let buffer = "";
-
-            while (true) {
-
-                const {
-                    value,
-                    done
-                } = await reader.read();
-
-                if (done) {
-                    break;
-                }
-
-                buffer +=
-                    decoder.decode(
-                        value,
-                        {
-                            stream: true
-                        }
-                    );
-
-                const events =
-                    buffer.split("\n\n");
-
-                buffer =
-                    events.pop() || "";
-
-                for (const event of events) {
-
-                    const lines =
-                        event.split("\n");
-
-                    let eventName = "";
-                    let data = "";
-
-                    for (const line of lines) {
-
-                        if (
-                            line.startsWith("event:")
-                        ) {
-                            eventName =
-                                line
-                                    .substring(6)
-                                    .trim();
-                        }
-
-                        if (
-                            line.startsWith("data:")
-                        ) {
-                            data +=
-                                line
-                                    .substring(5)
-                                    .trim();
-                        }
-                    }
-
-                    if (
-                        eventName ===
-                        "notification" &&
-                        data
-                    ) {
-
+            client.subscribe(
+                "/topic/notifications",
+                (message) => {
+                    try {
                         const notification =
-                            JSON.parse(data);
+                            JSON.parse(message.body);
+
+                        console.log(
+                            "New notification received:",
+                            notification
+                        );
 
                         setNotifications(
                             (previous) => [
@@ -256,35 +178,45 @@ useEffect(() => {
                             ]
                         );
 
-                        setUnreadCount(
-                            (previous) =>
-                                previous + 1
+                    } catch (error) {
+                        console.error(
+                            "Failed to parse notification:",
+                            error
                         );
                     }
                 }
-            }
+            );
+        },
 
-        } catch (error) {
+        onStompError: (frame) => {
+            console.error(
+                "WebSocket STOMP error:",
+                frame
+            );
+        },
 
-            if (
-                error.name !==
-                "AbortError"
-            ) {
-                console.error(
-                    "Notification stream error:",
-                    error
-                );
-            }
+        onWebSocketError: (error) => {
+            console.error(
+                "WebSocket error:",
+                error
+            );
+        }
+    });
+
+    client.activate();
+
+    return () => {
+        if (client) {
+            client.deactivate();
         }
     };
 
-    connectNotifications();
-
-    return () => {
-        controller.abort();
-    };
-
 }, []);
+    const unreadCount =
+        notifications.filter(
+            (notification) =>
+                !notification.read
+        ).length;
 
     const initials = userName
         ? userName
@@ -305,7 +237,9 @@ useEffect(() => {
         }
 
         navigate(
-            `/search?query=${encodeURIComponent(searchValue)}`
+            `/search?query=${encodeURIComponent(
+                searchValue
+            )}`
         );
     };
 
@@ -329,6 +263,7 @@ useEffect(() => {
         localStorage.removeItem("token");
         localStorage.removeItem("role");
         localStorage.removeItem("name");
+        localStorage.removeItem("email");
 
         setProfileOpen(false);
         setNotifOpen(false);
@@ -336,6 +271,29 @@ useEffect(() => {
         navigate("/login", {
             replace: true
         });
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            await api.put(
+                "/notifications/read-all"
+            );
+
+            setNotifications(
+                (previous) =>
+                    previous.map(
+                        (notification) => ({
+                            ...notification,
+                            read: true
+                        })
+                    )
+            );
+        } catch (error) {
+            console.error(
+                "Failed to mark notifications as read:",
+                error
+            );
+        }
     };
 
     return (
@@ -384,24 +342,26 @@ useEffect(() => {
                     ref={notifRef}
                 >
                     <button
-    type="button"
-    className="navbar-icon-btn"
-    aria-label="Notifications"
-    onClick={() => {
-        setNotifOpen((prev) => !prev);
-        setProfileOpen(false);
-    }}
->
-    <Bell size={18} />
+                        type="button"
+                        className="navbar-icon-btn"
+                        aria-label="Notifications"
+                        onClick={() => {
+                            setNotifOpen(
+                                (prev) => !prev
+                            );
+                            setProfileOpen(false);
+                        }}
+                    >
+                        <Bell size={18} />
 
-    {unreadCount > 0 && (
-        <span className="navbar-badge">
-            {unreadCount > 99
-                ? "99+"
-                : unreadCount}
-        </span>
-    )}
-</button>
+                        {unreadCount > 0 && (
+                            <span className="navbar-badge">
+                                {unreadCount > 9
+                                    ? "9+"
+                                    : unreadCount}
+                            </span>
+                        )}
+                    </button>
 
                     {notifOpen && (
                         <div className="navbar-dropdown navbar-dropdown--notif">
@@ -411,94 +371,77 @@ useEffect(() => {
                                     Notifications
                                 </span>
 
-                              <button
-    type="button"
-    className="navbar-link-btn"
-    onClick={async () => {
-        try {
-
-            const email =
-                localStorage.getItem("email")
-                || "aayush@gmail.com";
-
-            await api.post(
-                `/notifications/read-all?email=${encodeURIComponent(email)}`
-            );
-
-            setNotifications(
-                (previous) =>
-                    previous.map(
-                        (notification) => ({
-                            ...notification,
-                            read: true
-                        })
-                    )
-            );
-
-            setUnreadCount(0);
-
-        } catch (error) {
-            console.error(
-                "Failed to mark notifications as read:",
-                error
-            );
-        }
-    }}
->
-    Mark all read
-</button>
+                                {unreadCount > 0 && (
+                                    <button
+                                        type="button"
+                                        className="navbar-link-btn"
+                                        onClick={
+                                            handleMarkAllRead
+                                        }
+                                    >
+                                        Mark all read
+                                    </button>
+                                )}
                             </div>
 
                             <div className="navbar-notif-list">
 
                                 {notifications.length === 0 ? (
-    <div className="navbar-notif-empty">
-        No notifications
-    </div>
-) : (
-    notifications.map(
-        (notification) => (
-            <div
-                className={`navbar-notif-item ${
-                    notification.read
-                        ? "navbar-notif-item--read"
-                        : ""
-                }`}
-                key={notification.id}
-            >
+                                    <div className="navbar-notif-empty">
+                                        No notifications
+                                    </div>
+                                ) : (
+                                    notifications.map(
+                                        (notification) => (
+                                            <div
+                                                className={`navbar-notif-item ${
+                                                    notification.read
+                                                        ? "navbar-notif-item--read"
+                                                        : ""
+                                                }`}
+                                                key={
+                                                    notification.id
+                                                }
+                                            >
 
-                {!notification.read && (
-                    <span className="navbar-notif-dot" />
-                )}
+                                                {!notification.read && (
+                                                    <span className="navbar-notif-dot" />
+                                                )}
 
-                <div className="navbar-notif-body">
+                                                <div className="navbar-notif-body">
 
-                    <p className="navbar-notif-title">
-                        {notification.title}
-                    </p>
+                                                    <p className="navbar-notif-title">
+                                                        {
+                                                            notification.title
+                                                        }
+                                                    </p>
 
-                    <p className="navbar-notif-detail">
-                        {notification.message}
-                    </p>
+                                                    <p className="navbar-notif-detail">
+                                                        {
+                                                            notification.detail
+                                                        }
+                                                    </p>
 
-                </div>
+                                                </div>
 
-                <span className="navbar-notif-time">
-                    {new Date(
-                        notification.createdAt
-                    ).toLocaleTimeString(
-                        [],
-                        {
-                            hour: "2-digit",
-                            minute: "2-digit"
-                        }
-                    )}
-                </span>
+                                                <span className="navbar-notif-time">
+                                                    {notification.createdAt
+                                                        ? new Date(
+                                                              notification.createdAt
+                                                          ).toLocaleTimeString(
+                                                              [],
+                                                              {
+                                                                  hour: "2-digit",
+                                                                  minute: "2-digit"
+                                                              }
+                                                          )
+                                                        : ""}
+                                                </span>
 
-            </div>
-        )
-    )
-)}
+                                            </div>
+                                        )
+                                    )
+                                )}
 
                             </div>
 
@@ -588,7 +531,9 @@ useEffect(() => {
                             <button
                                 type="button"
                                 className="navbar-dropdown-item"
-                                onClick={handleMyProfile}
+                                onClick={
+                                    handleMyProfile
+                                }
                             >
                                 <User size={15} />
                                 <span>
@@ -599,7 +544,9 @@ useEffect(() => {
                             <button
                                 type="button"
                                 className="navbar-dropdown-item"
-                                onClick={handleAccountSettings}
+                                onClick={
+                                    handleAccountSettings
+                                }
                             >
                                 <SettingsIcon size={15} />
                                 <span>
