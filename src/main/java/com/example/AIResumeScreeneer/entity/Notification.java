@@ -2,6 +2,7 @@ package com.example.AIResumeScreeneer.entity;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -33,7 +34,8 @@ public class Notification {
 
     private String type;
 
-    private boolean read;
+@Column(name = "is_read")
+private boolean read;
 
     private LocalDateTime createdAt;
 }
