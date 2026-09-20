@@ -1,61 +1,96 @@
 package com.example.AIResumeScreeneer.contoller;
 
-import com.example.AIResumeScreeneer.dto.JobRequest;
-import com.example.AIResumeScreeneer.dto.JobResponse;
+import com.example.AIResumeScreeneer.entity.Job;
 import com.example.AIResumeScreeneer.service.JobService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/job")
+@RequestMapping("/api/jobs")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class JobController {
 
     private final JobService jobService;
 
-    @PostMapping("/create")
-    public JobResponse createJob(
-            @RequestBody JobRequest request) {
+    // ==========================================
+    // ADMIN - CREATE JOB
+    // ==========================================
 
-        return jobService.create(request);
+    @PostMapping
+    public ResponseEntity<Job> createJob(
+            @RequestBody Job job) {
+
+        return ResponseEntity.ok(
+                jobService.createJob(job)
+        );
     }
+
+    // ==========================================
+    // ADMIN - VIEW ALL JOBS
+    // ==========================================
 
     @GetMapping("/all")
-    public List<JobResponse> getAllJobs() {
+    public ResponseEntity<List<Job>> getAllJobs() {
 
-        return jobService.getAll();
+        return ResponseEntity.ok(
+                jobService.getAllJobs()
+        );
     }
 
-    @PutMapping("/update/{id}")
-public JobResponse updateJob(
-        @PathVariable Long id,
-        @RequestBody JobRequest request) {
+    // ==========================================
+    // USER + ADMIN - VIEW OPEN JOBS
+    // ==========================================
 
-    return jobService.update(id, request);
-}
-@DeleteMapping("/delete/{id}")
-public String deleteJob(@PathVariable Long id) {
+    @GetMapping
+    public ResponseEntity<List<Job>> getOpenJobs() {
 
-    jobService.delete(id);
+        return ResponseEntity.ok(
+                jobService.getOpenJobs()
+        );
+    }
 
-    return "Job Deleted Successfully";
+    // ==========================================
+    // USER + ADMIN - VIEW JOB DETAILS
+    // ==========================================
 
-}
+    @GetMapping("/{id}")
+    public ResponseEntity<Job> getJob(
+            @PathVariable Long id) {
 
-@PutMapping("/close/{id}")
-public JobResponse closeJob(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                jobService.getJobById(id)
+        );
+    }
 
-    return jobService.closeJob(id);
+    // ==========================================
+    // ADMIN - UPDATE JOB
+    // ==========================================
 
-}
+    @PutMapping("/{id}")
+    public ResponseEntity<Job> updateJob(
+            @PathVariable Long id,
+            @RequestBody Job job) {
 
-@PutMapping("/reopen/{id}")
-public JobResponse reopenJob(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                jobService.updateJob(id, job)
+        );
+    }
 
-    return jobService.reopenJob(id);
+    // ==========================================
+    // ADMIN - DELETE JOB
+    // ==========================================
 
-}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteJob(
+            @PathVariable Long id) {
+
+        jobService.deleteJob(id);
+
+        return ResponseEntity.ok(
+                "Job deleted successfully."
+        );
+    }
 }

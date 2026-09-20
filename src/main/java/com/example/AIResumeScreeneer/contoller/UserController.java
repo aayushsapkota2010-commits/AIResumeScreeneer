@@ -8,16 +8,14 @@ import com.example.AIResumeScreeneer.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
-
 public class UserController {
 
     private final UserRepository userRepository;
@@ -26,23 +24,17 @@ public class UserController {
 
 
     // ==============================
-    // GET PROFILE
+    // GET LOGGED-IN USER PROFILE
     // ==============================
 
     @GetMapping("/profile")
-    public ResponseEntity<UserProfileResponse> getProfile() {
+    public ResponseEntity<UserProfileResponse> getProfile(
+            Authentication authentication
+    ) {
 
-        /*
-         * TEMPORARY:
-         * We are using the first user from the database.
-         *
-         * Later we can connect this to the
-         * logged-in user's JWT.
-         */
+        String email = authentication.getName();
 
-        User user = userRepository.findAll()
-                .stream()
-                .findFirst()
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new RuntimeException("User not found")
                 );
@@ -59,17 +51,18 @@ public class UserController {
 
 
     // ==============================
-    // UPDATE PROFILE
+    // UPDATE LOGGED-IN USER PROFILE
     // ==============================
 
     @PutMapping("/profile")
     public ResponseEntity<UserProfileResponse> updateProfile(
-            @RequestBody UpdateProfileRequest request
+            @RequestBody UpdateProfileRequest request,
+            Authentication authentication
     ) {
 
-        User user = userRepository.findAll()
-                .stream()
-                .findFirst()
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new RuntimeException("User not found")
                 );
@@ -99,19 +92,16 @@ public class UserController {
     // ==============================
     // CHANGE PASSWORD
     // ==============================
-    @GetMapping("/all")
-public ResponseEntity<List<User>> getAllUsers() {
-    return ResponseEntity.ok(userRepository.findAll());
-}
 
     @PutMapping("/change-password")
     public ResponseEntity<String> changePassword(
-            @RequestBody ChangePasswordRequest request
+            @RequestBody ChangePasswordRequest request,
+            Authentication authentication
     ) {
 
-        User user = userRepository.findAll()
-                .stream()
-                .findFirst()
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new RuntimeException("User not found")
                 );

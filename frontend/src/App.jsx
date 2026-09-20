@@ -27,7 +27,11 @@ import KanbanBoard from "./pages/KanbanBoard";
 import InterviewDashboard from "./pages/InterviewDashboard";
 import Settings from "./pages/Settings";
 import UserProfile from "./pages/UserProfile";
-
+import BrowseJobs from "./pages/BrowseJobs";
+import MyResumes from "./pages/MyResumes";
+import JobDetails from "./pages/JobDetails";
+import ApplyJob from "./pages/ApplyJob";
+import MyApplications from "./pages/MyApplications";
 
 function App() {
 
@@ -63,14 +67,14 @@ function App() {
 
 
                 {/* =========================
-                    MAIN DASHBOARD
+                    ADMIN DASHBOARD
                 ========================= */}
 
                 <Route
                     path="/dashboard"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <Dashboard />
                             </ProtectedRoute>
                         </Layout>
@@ -79,14 +83,14 @@ function App() {
 
 
                 {/* =========================
-                    UPLOAD RESUME
+                    ADMIN - UPLOAD RESUME
                 ========================= */}
 
                 <Route
                     path="/upload"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <UploadResume />
                             </ProtectedRoute>
                         </Layout>
@@ -95,14 +99,14 @@ function App() {
 
 
                 {/* =========================
-                    RESUME LIBRARY
+                    ADMIN - RESUME LIBRARY
                 ========================= */}
 
                 <Route
                     path="/resumes"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <ResumeList />
                             </ProtectedRoute>
                         </Layout>
@@ -111,14 +115,14 @@ function App() {
 
 
                 {/* =========================
-                    RESUME DETAILS
+                    ADMIN - RESUME DETAILS
                 ========================= */}
 
                 <Route
                     path="/resume/:id"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <ResumeDetails />
                             </ProtectedRoute>
                         </Layout>
@@ -127,14 +131,14 @@ function App() {
 
 
                 {/* =========================
-                    SEARCH / FILTER
+                    ADMIN - SEARCH / FILTER
                 ========================= */}
 
                 <Route
                     path="/search"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <SearchFilter />
                             </ProtectedRoute>
                         </Layout>
@@ -143,14 +147,14 @@ function App() {
 
 
                 {/* =========================
-                    PIPELINE
+                    ADMIN - PIPELINE
                 ========================= */}
 
                 <Route
                     path="/pipeline"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <PipelineBoard />
                             </ProtectedRoute>
                         </Layout>
@@ -159,14 +163,14 @@ function App() {
 
 
                 {/* =========================
-                    CANDIDATES
+                    ADMIN - CANDIDATES
                 ========================= */}
 
                 <Route
                     path="/candidates"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <CandidateManagement />
                             </ProtectedRoute>
                         </Layout>
@@ -175,14 +179,14 @@ function App() {
 
 
                 {/* =========================
-                    CANDIDATE PROFILE
+                    ADMIN - CANDIDATE PROFILE
                 ========================= */}
 
                 <Route
                     path="/candidate/:id"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <CandidateProfile />
                             </ProtectedRoute>
                         </Layout>
@@ -191,30 +195,14 @@ function App() {
 
 
                 {/* =========================
-                    INTERVIEWS
-                ========================= */}
-
-                <Route
-                    path="/interviews"
-                    element={
-                        <Layout>
-                            <ProtectedRoute>
-                                <InterviewDashboard />
-                            </ProtectedRoute>
-                        </Layout>
-                    }
-                />
-
-
-                {/* =========================
-                    JOB POSTS
+                    ADMIN - JOB POSTS
                 ========================= */}
 
                 <Route
                     path="/jobs"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <JobPosts />
                             </ProtectedRoute>
                         </Layout>
@@ -223,14 +211,14 @@ function App() {
 
 
                 {/* =========================
-                    ANALYTICS
+                    ADMIN - ANALYTICS
                 ========================= */}
 
                 <Route
                     path="/analytics"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <AnalyticsDashboard />
                             </ProtectedRoute>
                         </Layout>
@@ -239,14 +227,14 @@ function App() {
 
 
                 {/* =========================
-                    USERS
+                    ADMIN - USERS
                 ========================= */}
 
                 <Route
                     path="/users"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <AdminUsers />
                             </ProtectedRoute>
                         </Layout>
@@ -255,14 +243,14 @@ function App() {
 
 
                 {/* =========================
-                    ACTIVITY FEED
+                    ADMIN - ACTIVITY FEED
                 ========================= */}
 
                 <Route
                     path="/activity-feed"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
                                 <ActivityFeed />
                             </ProtectedRoute>
                         </Layout>
@@ -271,14 +259,46 @@ function App() {
 
 
                 {/* =========================
-                    CANDIDATE DASHBOARD
+                    ADMIN - KANBAN
+                ========================= */}
+
+                <Route
+                    path="/kanban"
+                    element={
+                        <Layout>
+                            <ProtectedRoute allowedRoles={["ADMIN"]}>
+                                <KanbanBoard />
+                            </ProtectedRoute>
+                        </Layout>
+                    }
+                />
+
+
+                {/* =========================
+                    ADMIN / USER - INTERVIEWS
+                ========================= */}
+
+                <Route
+                    path="/interviews"
+                    element={
+                        <Layout>
+                            <ProtectedRoute allowedRoles={["ADMIN", "USER"]}>
+                                <InterviewDashboard />
+                            </ProtectedRoute>
+                        </Layout>
+                    }
+                />
+
+
+                {/* =========================
+                    USER - CANDIDATE DASHBOARD
                 ========================= */}
 
                 <Route
                     path="/candidate-dashboard"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["USER"]}>
                                 <CandidateDashboard />
                             </ProtectedRoute>
                         </Layout>
@@ -287,41 +307,46 @@ function App() {
 
 
                 {/* =========================
-                    KANBAN
+                    USER - BROWSE JOBS
                 ========================= */}
 
                 <Route
-                    path="/kanban"
+                    path="/browse-jobs"
                     element={
                         <Layout>
-                            <ProtectedRoute>
-                                <KanbanBoard />
+                            <ProtectedRoute allowedRoles={["USER"]}>
+                                <BrowseJobs />
                             </ProtectedRoute>
                         </Layout>
                     }
                 />
-                
-                   <Route
-    path="/profile"
-    element={
-        <Layout>
-            <ProtectedRoute>
-                <UserProfile />
-            </ProtectedRoute>
-        </Layout>
-    }
-/>
 
 
                 {/* =========================
-                    SETTINGS
+                    USER - PROFILE
+                ========================= */}
+
+                <Route
+                    path="/profile"
+                    element={
+                        <Layout>
+                            <ProtectedRoute allowedRoles={["USER"]}>
+                                <UserProfile />
+                            </ProtectedRoute>
+                        </Layout>
+                    }
+                />
+
+
+                {/* =========================
+                    ADMIN / USER - SETTINGS
                 ========================= */}
 
                 <Route
                     path="/settings"
                     element={
                         <Layout>
-                            <ProtectedRoute>
+                            <ProtectedRoute allowedRoles={["ADMIN", "USER"]}>
                                 <Settings />
                             </ProtectedRoute>
                         </Layout>
@@ -342,6 +367,47 @@ function App() {
                         />
                     }
                 />
+
+                <Route
+    path="/my-resumes"
+    element={
+        <Layout>
+            <ProtectedRoute allowedRoles={["USER"]}>
+                <MyResumes />
+            </ProtectedRoute>
+        </Layout>
+    }
+/>
+<Route
+    path="/jobs/:id"
+    element={
+        <Layout>
+            <ProtectedRoute allowedRoles={["USER"]}>
+                <JobDetails />
+            </ProtectedRoute>
+        </Layout>
+    }
+/>
+<Route
+    path="/apply/:id"
+    element={
+        <Layout>
+            <ProtectedRoute allowedRoles={["USER"]}>
+                <ApplyJob />
+            </ProtectedRoute>
+        </Layout>
+    }
+/>
+<Route
+    path="/my-applications"
+    element={
+        <Layout>
+            <ProtectedRoute allowedRoles={["USER"]}>
+                <MyApplications />
+            </ProtectedRoute>
+        </Layout>
+    }
+/>
 
             </Routes>
 

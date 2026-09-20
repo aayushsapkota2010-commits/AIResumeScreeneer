@@ -271,4 +271,59 @@ public void deleteResume(Long id) throws IOException {
             "Resume and related data deleted. ID = " + id
     );
 }
+
+@Transactional
+public void deleteOwnResume(
+        Long id,
+        String candidateEmail
+) throws IOException {
+
+    Resume resume =
+            resumeRepository.findById(id)
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Resume not found"
+                            )
+                    );
+
+    // Make sure this resume belongs to the logged-in user
+    if (!candidateEmail.equalsIgnoreCase(
+            resume.getCandidateEmail()
+    )) {
+
+        throw new RuntimeException(
+                "You are not allowed to delete this resume"
+        );
+    }
+
+    // Delete activity logs
+    activityLogRepository.deleteByResumeId(id);
+
+    // Delete recruiter notes
+    recruiterNoteRepository.deleteByResumeId(id);
+
+    // Delete database record
+    resumeRepository.delete(resume);
+
+    // Delete physical file
+    if (resume.getFilePath() != null) {
+
+        File file =
+                new File(resume.getFilePath());
+
+        if (file.exists()) {
+
+            boolean deleted = file.delete();
+
+            System.out.println(
+                    "Resume physical file deleted = "
+                            + deleted
+            );
+        }
+    }
+
+    System.out.println(
+            "Candidate resume deleted. ID = " + id
+    );
+}
 }

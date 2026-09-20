@@ -26,5 +26,7 @@ findTopByCandidateEmailOrderByIdDesc(
         String candidateEmail);
         List<Resume> findByStatus(
         CandidateStatus status);
+
+        List<Resume> findByCandidateEmailOrderByUploadedAtDesc(String candidateEmail);
         
 }

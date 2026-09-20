@@ -18,8 +18,13 @@ public class Job {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
 
+    @Column(nullable = false, length = 5000)
+    private String description;
+
+    @Column(nullable = false)
     private String company;
 
     private String location;
@@ -30,30 +35,12 @@ public class Job {
 
     private String salary;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+    private LocalDateTime deadline;
 
-    @Column(columnDefinition = "TEXT")
-    private String requiredSkills;
-
+    @Column(nullable = false)
     private String status;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    public void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-
-        if (status == null) {
-            status = "ACTIVE";
-        }
-    }
-
-    @PreUpdate
-    public void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

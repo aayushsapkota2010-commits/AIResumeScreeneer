@@ -19,7 +19,7 @@ function AdminUsers() {
             setLoading(true);
             setError("");
 
-            const response = await api.get("/user/all");
+            const response = await api.get("/admin/users");
 
             console.log("Users received:", response.data);
 

@@ -77,7 +77,7 @@ import com.example.AIResumeScreeneer.dto.RecruiterDashboardChartResponse;
 import com.example.AIResumeScreeneer.dto.RoadmapResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import java.security.Principal;
 import org.springframework.core.io.Resource;
 
 
@@ -612,6 +612,75 @@ public ResumeChatResponse chat(
 
             request.getQuestion()
     );
+}
+
+// ============================================================
+// USER - GET MY RESUMES
+// ============================================================
+
+@GetMapping("/my")
+public List<Resume> getMyResumes(Principal principal) {
+
+    String email = principal.getName();
+
+    return resumeRepository
+            .findByCandidateEmailOrderByUploadedAtDesc(email);
+}
+
+
+// ============================================================
+// USER - UPLOAD MY RESUME
+// ============================================================
+
+@PostMapping("/my-upload")
+public String uploadMyResume(
+        @RequestParam("file") MultipartFile file,
+        Principal principal)
+        throws IOException, TikaException, SAXException {
+
+    String email = principal.getName();
+
+    return resumeService.uploadResume(
+            file,
+            email
+    );
+}
+
+
+// ============================================================
+// USER - DELETE MY RESUME
+// ============================================================
+
+@DeleteMapping("/my/{id}")
+public ResponseEntity<String> deleteMyResume(
+        @PathVariable Long id,
+        Principal principal) {
+
+    try {
+
+        String email = principal.getName();
+
+        resumeService.deleteOwnResume(
+                id,
+                email
+        );
+
+        return ResponseEntity.ok(
+                "Resume deleted successfully"
+        );
+
+    } catch (RuntimeException e) {
+
+        return ResponseEntity
+                .status(404)
+                .body(e.getMessage());
+
+    } catch (IOException e) {
+
+        return ResponseEntity
+                .internalServerError()
+                .body("Failed to delete resume file");
+    }
 }
 
 }

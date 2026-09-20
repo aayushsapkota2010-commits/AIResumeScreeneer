@@ -1,12 +1,11 @@
 package com.example.AIResumeScreeneer.service;
 
-import com.example.AIResumeScreeneer.dto.JobRequest;
-import com.example.AIResumeScreeneer.dto.JobResponse;
 import com.example.AIResumeScreeneer.entity.Job;
 import com.example.AIResumeScreeneer.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -15,94 +14,92 @@ public class JobService {
 
     private final JobRepository jobRepository;
 
-    public JobResponse create(JobRequest request) {
+    // ==============================
+    // ADMIN - CREATE JOB
+    // ==============================
 
-        Job job = Job.builder()
-                .title(request.getTitle())
-                .company(request.getCompany())
-                .location(request.getLocation())
-                .employmentType(request.getEmploymentType())
-                .experience(request.getExperience())
-                .salary(request.getSalary())
-                .description(request.getDescription())
-                .requiredSkills(request.getRequiredSkills())
-                .build();
+    public Job createJob(Job job) {
 
-        jobRepository.save(job);
+        job.setStatus(
+                job.getStatus() == null || job.getStatus().isBlank()
+                        ? "OPEN"
+                        : job.getStatus().toUpperCase()
+        );
 
-        return map(job);
+        job.setCreatedAt(LocalDateTime.now());
+        job.setUpdatedAt(LocalDateTime.now());
+
+        return jobRepository.save(job);
     }
 
-    public List<JobResponse> getAll() {
+    // ==============================
+    // GET ALL JOBS
+    // ==============================
 
-        return jobRepository.findAll()
-                .stream()
-                .map(this::map)
-                .toList();
+    public List<Job> getAllJobs() {
+        return jobRepository.findAllByOrderByCreatedAtDesc();
     }
 
-    private JobResponse map(Job job) {
+    // ==============================
+    // GET OPEN JOBS
+    // ==============================
 
-        return JobResponse.builder()
-                .id(job.getId())
-                .title(job.getTitle())
-                .company(job.getCompany())
-                .location(job.getLocation())
-                .employmentType(job.getEmploymentType())
-                .experience(job.getExperience())
-                .salary(job.getSalary())
-                .description(job.getDescription())
-                .requiredSkills(job.getRequiredSkills())
-                .status(job.getStatus())
-                .createdAt(job.getCreatedAt())
-                .updatedAt(job.getUpdatedAt())
-                .build();
+    public List<Job> getOpenJobs() {
+        return jobRepository.findByStatusOrderByCreatedAtDesc("OPEN");
     }
-    public JobResponse update(Long id, JobRequest request) {
 
-    Job job = jobRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Job not found"));
+    // ==============================
+    // GET JOB BY ID
+    // ==============================
 
-    job.setTitle(request.getTitle());
-    job.setCompany(request.getCompany());
-    job.setLocation(request.getLocation());
-    job.setEmploymentType(request.getEmploymentType());
-    job.setExperience(request.getExperience());
-    job.setSalary(request.getSalary());
-    job.setDescription(request.getDescription());
-    job.setRequiredSkills(request.getRequiredSkills());
+    public Job getJobById(Long id) {
 
-    jobRepository.save(job);
+        return jobRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Job not found with id: " + id)
+                );
+    }
 
-    return map(job);
-}
+    // ==============================
+    // UPDATE JOB
+    // ==============================
 
-public void delete(Long id) {
+    public Job updateJob(Long id, Job updatedJob) {
 
-    jobRepository.deleteById(id);
+        Job existingJob = getJobById(id);
 
-}
-public JobResponse closeJob(Long id) {
+        existingJob.setTitle(updatedJob.getTitle());
+        existingJob.setDescription(updatedJob.getDescription());
+        existingJob.setCompany(updatedJob.getCompany());
+        existingJob.setLocation(updatedJob.getLocation());
+        existingJob.setEmploymentType(updatedJob.getEmploymentType());
+        existingJob.setExperience(updatedJob.getExperience());
+        existingJob.setSalary(updatedJob.getSalary());
+        existingJob.setDeadline(updatedJob.getDeadline());
 
-    Job job = jobRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Job not found"));
+        if (updatedJob.getStatus() != null &&
+                !updatedJob.getStatus().isBlank()) {
 
-    job.setStatus("CLOSED");
+            existingJob.setStatus(
+                    updatedJob.getStatus().toUpperCase()
+            );
+        }
 
-    jobRepository.save(job);
+        existingJob.setUpdatedAt(LocalDateTime.now());
 
-    return map(job);
-}
+        return jobRepository.save(existingJob);
+    }
 
-public JobResponse reopenJob(Long id) {
+    // ==============================
+    // DELETE JOB
+    // ==============================
 
-    Job job = jobRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Job not found"));
+    public void deleteJob(Long id) {
 
-    job.setStatus("ACTIVE");
+        if (!jobRepository.existsById(id)) {
+            throw new RuntimeException("Job not found with id: " + id);
+        }
 
-    jobRepository.save(job);
-
-    return map(job);
-}
+        jobRepository.deleteById(id);
+    }
 }

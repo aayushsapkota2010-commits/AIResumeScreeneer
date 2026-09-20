@@ -58,9 +58,9 @@ public class WebSecurityConfig {
                 // AUTH
                 // =====================================================
                 .requestMatchers(
-                    "/api/auth/**"
-                ).permitAll()
-
+    "/api/auth/register",
+    "/api/auth/login"
+).permitAll()
                 // =====================================================
                 // WEBSOCKET
                 // =====================================================
@@ -101,6 +101,22 @@ public class WebSecurityConfig {
                     "/api/user/all"
                 ).hasRole("ADMIN")
 
+
+                .requestMatchers(
+    HttpMethod.GET,
+    "/api/resume/my"
+).hasRole("USER")
+
+.requestMatchers(
+    HttpMethod.POST,
+    "/api/resume/my-upload"
+).hasRole("USER")
+
+.requestMatchers(
+    HttpMethod.DELETE,
+    "/api/resume/my/**"
+).hasRole("USER")
+
                 // =====================================================
                 // RESUME APIs
                 // ADMIN + USER
@@ -115,6 +131,30 @@ public class WebSecurityConfig {
                 .requestMatchers(
                     "/api/admin/**"
                 ).hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.POST, "/api/jobs")
+    .hasRole("ADMIN")
+
+.requestMatchers(HttpMethod.PUT, "/api/jobs/**")
+    .hasRole("ADMIN")
+
+.requestMatchers(HttpMethod.DELETE, "/api/jobs/**")
+    .hasRole("ADMIN")
+
+.requestMatchers(HttpMethod.GET, "/api/jobs/all")
+    .hasRole("ADMIN")
+
+.requestMatchers(HttpMethod.GET, "/api/jobs", "/api/jobs/**")
+    .hasAnyRole("ADMIN", "USER")
+
+    .requestMatchers(HttpMethod.POST, "/api/applications")
+    .hasRole("USER")
+
+.requestMatchers(HttpMethod.GET, "/api/applications/my")
+    .hasRole("USER")
+
+.requestMatchers(HttpMethod.GET, "/api/applications/job/**")
+    .hasRole("ADMIN")
 
                 // =====================================================
                 // EVERYTHING ELSE
