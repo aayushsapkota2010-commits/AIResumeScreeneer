@@ -24,29 +24,60 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final ResumeRepository resumeRepository;
 
+    /*
+     * Resume quality / ATS analysis
+     */
+    private final AtsService atsService;
+
+    /*
+     * Job-specific resume matching
+     */
+    private final JobMatchingService jobMatchingService;
+
+
+    // ============================================================
+    // APPLY FOR JOB
+    // ============================================================
+
     @Transactional
     public Application apply(
             Long jobId,
             Long resumeId,
             String candidateEmail) {
 
-        // Find job
+        // ========================================================
+        // 1. FIND JOB
+        // ========================================================
+
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() ->
                         new RuntimeException("Job not found"));
 
-        // Job must be open
+
+        // ========================================================
+        // 2. JOB MUST BE OPEN
+        // ========================================================
+
         if (!"OPEN".equalsIgnoreCase(job.getStatus())) {
+
             throw new RuntimeException(
                     "This job is no longer accepting applications");
         }
 
-        // Find resume
+
+        // ========================================================
+        // 3. FIND RESUME
+        // ========================================================
+
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() ->
                         new RuntimeException("Resume not found"));
 
-        // Make sure resume belongs to logged-in candidate
+
+        // ========================================================
+        // 4. CHECK RESUME OWNERSHIP
+        // ========================================================
+
         if (!candidateEmail.equalsIgnoreCase(
                 resume.getCandidateEmail())) {
 
@@ -54,38 +85,198 @@ public class ApplicationService {
                     "You are not allowed to use this resume");
         }
 
-        // Prevent duplicate application using same resume
+
+        // ========================================================
+        // 5. PREVENT DUPLICATE APPLICATION
+        // ========================================================
+
         if (applicationRepository.existsByJobIdAndResumeId(
-                jobId, resumeId)) {
+                jobId,
+                resumeId)) {
 
             throw new RuntimeException(
                     "You have already applied to this job using this resume");
         }
 
-        Application application = Application.builder()
-                .job(job)
-                .resume(resume)
-                .candidateEmail(candidateEmail)
-                .status(ApplicationStatus.APPLIED)
-                .appliedAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
+
+        // ========================================================
+        // 6. GET RESUME TEXT
+        // ========================================================
+
+        String resumeText = resume.getExtractedText();
+
+        if (resumeText == null) {
+            resumeText = "";
+        }
+
+
+        // ========================================================
+        // 7. GET JOB DESCRIPTION
+        // ========================================================
+
+        String jobDescription = job.getDescription();
+
+        if (jobDescription == null) {
+            jobDescription = "";
+        }
+
+
+        // ========================================================
+        // 8. JOB-SPECIFIC MATCHING
+        // ========================================================
+
+        var matchResult =
+                jobMatchingService.matchResume(
+                        resumeText,
+                        jobDescription
+                );
+
+
+        // ========================================================
+        // 9. GENERIC ATS / RESUME QUALITY SCORE
+        // ========================================================
+
+        int atsScore =
+                atsService.calculateScore(
+                        resumeText
+                );
+
+
+        // ========================================================
+        // 10. GET MATCH SCORE
+        // ========================================================
+
+        int matchScore =
+                matchResult.getMatchPercentage();
+
+
+        // ========================================================
+        // 11. LOG ANALYSIS
+        // ========================================================
+
+        System.out.println();
+        System.out.println("========================================");
+        System.out.println("       APPLICATION ANALYSIS");
+        System.out.println("========================================");
+
+        System.out.println(
+                "Candidate = " + candidateEmail
+        );
+
+        System.out.println(
+                "Job = " + job.getTitle()
+        );
+
+        System.out.println(
+                "Resume = " + resume.getFileName()
+        );
+
+        System.out.println(
+                "ATS Score = " + atsScore
+        );
+
+        System.out.println(
+                "Match Score = " + matchScore
+        );
+
+        System.out.println(
+                "Matched Skills = "
+                        + matchResult.getMatchedSkills()
+        );
+
+        System.out.println(
+                "Missing Skills = "
+                        + matchResult.getMissingSkills()
+        );
+
+        System.out.println(
+                "Recommendation = "
+                        + matchResult.getRecommendation()
+        );
+
+        System.out.println("========================================");
+        System.out.println();
+
+
+        // ========================================================
+        // 12. CREATE APPLICATION
+        // ========================================================
+
+        LocalDateTime now =
+                LocalDateTime.now();
+
+        Application application =
+                Application.builder()
+
+                        .job(job)
+
+                        .resume(resume)
+
+                        .candidateEmail(candidateEmail)
+
+                        .status(
+                                ApplicationStatus.APPLIED
+                        )
+
+                        .appliedAt(now)
+
+                        .updatedAt(now)
+
+                        // -------------------------------
+                        // Job-specific analysis
+                        // -------------------------------
+
+                        .atsScore(atsScore)
+
+                        .matchScore(matchScore)
+
+                        .matchedSkills(
+                                matchResult.getMatchedSkills()
+                        )
+
+                        .missingSkills(
+                                matchResult.getMissingSkills()
+                        )
+
+                        .recommendation(
+                                matchResult.getRecommendation()
+                        )
+
+                        .build();
+
+
+        // ========================================================
+        // 13. SAVE APPLICATION
+        // ========================================================
 
         return applicationRepository.save(application);
     }
+
+
+    // ============================================================
+    // GET MY APPLICATIONS
+    // ============================================================
 
     public List<Application> getMyApplications(
             String candidateEmail) {
 
         return applicationRepository
                 .findByCandidateEmailOrderByAppliedAtDesc(
-                        candidateEmail);
+                        candidateEmail
+                );
     }
+
+
+    // ============================================================
+    // GET APPLICATIONS FOR JOB
+    // ============================================================
 
     public List<Application> getApplicationsForJob(
             Long jobId) {
 
         return applicationRepository
-                .findByJobIdOrderByAppliedAtDesc(jobId);
+                .findByJobIdOrderByAppliedAtDesc(
+                        jobId
+                );
     }
 }
