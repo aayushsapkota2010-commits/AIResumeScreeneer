@@ -1,5 +1,7 @@
 package com.example.AIResumeScreeneer.service;
 
+import java.util.List;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -11,72 +13,103 @@ import com.example.AIResumeScreeneer.repository.UserRepository;
 import com.example.AIResumeScreeneer.security.JwtService;
 
 import lombok.RequiredArgsConstructor;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
     private final UserRepository userRepository;
     private final JwtService jwtService;
-        private final BCryptPasswordEncoder passwordEncoder;
-        
-        public String register(RegisterRequest request)
-        {
-            if(userRepository.findByEmail(request.getEmail()).isPresent())
-            {
-                return "User Already Exists";
-            }
-            User user=User.builder().fullName(request.getFullName()).email(request.getEmail())
-            .password(passwordEncoder.encode(request.getPassword()))
-            .role("USER").build();
-            userRepository.save(user);
-            return "Registration Successfull";
-        
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    public String register(RegisterRequest request) {
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            return "User Already Exists";
         }
 
-        public String login(LoginRequest request) {
+        User user = User.builder()
+                .fullName(request.getFullName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role("USER")
+                .build();
 
-    User user = userRepository
-            .findByEmail(request.getEmail())
-            .orElseThrow(() ->
-                    new RuntimeException("User not found"));
+        userRepository.save(user);
 
-    boolean matches =
-            passwordEncoder.matches(
-                    request.getPassword(),
-                    user.getPassword());
-
-    if (!matches) {
-        throw new RuntimeException("Invalid Password");
+        return "Registration Successfull";
     }
 
-    return jwtService.generateToken(user.getEmail(),user.getRole());
-}
-public List<UserResponse> getAllUsers() {
+    public String login(LoginRequest request) {
 
-    return userRepository.findAll()
-            .stream()
-            .map(user -> UserResponse.builder()
-                    .id(user.getId())
-                    .fullName(user.getFullName())
-                    .email(user.getEmail())
-                    .role(user.getRole())
-                    .build())
-            .toList();
-}
-public String updateRole(
-        Long userId,
-        String role) {
+        User user = userRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
 
-    User user =
-            userRepository.findById(userId)
-                    .orElseThrow();
+        boolean matches =
+                passwordEncoder.matches(
+                        request.getPassword(),
+                        user.getPassword());
 
-    user.setRole(role);
+        if (!matches) {
+            throw new RuntimeException("Invalid Password");
+        }
 
-    userRepository.save(user);
+        return jwtService.generateToken(
+                user.getEmail(),
+                user.getRole());
+    }
 
-    return "Role Updated";
-}
-    
+    public String loginWithGoogle(
+            String email,
+            String fullName) {
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseGet(() -> {
+
+                    User newUser = User.builder()
+                            .fullName(fullName)
+                            .email(email)
+                            .password(passwordEncoder.encode(
+                                    java.util.UUID.randomUUID().toString()))
+                            .role("USER")
+                            .build();
+
+                    return userRepository.save(newUser);
+                });
+
+        return jwtService.generateToken(
+                user.getEmail(),
+                user.getRole());
+    }
+
+    public List<UserResponse> getAllUsers() {
+
+        return userRepository.findAll()
+                .stream()
+                .map(user -> UserResponse.builder()
+                        .id(user.getId())
+                        .fullName(user.getFullName())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .build())
+                .toList();
+    }
+
+    public String updateRole(
+            Long userId,
+            String role) {
+
+        User user =
+                userRepository.findById(userId)
+                        .orElseThrow();
+
+        user.setRole(role);
+
+        userRepository.save(user);
+
+        return "Role Updated";
+    }
 }

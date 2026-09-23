@@ -32,6 +32,7 @@ import MyResumes from "./pages/MyResumes";
 import JobDetails from "./pages/JobDetails";
 import ApplyJob from "./pages/ApplyJob";
 import MyApplications from "./pages/MyApplications";
+import OAuth2Callback from "./pages/OAuth2Callback";
 
 function App() {
 
@@ -407,6 +408,10 @@ function App() {
             </ProtectedRoute>
         </Layout>
     }
+/>
+<Route
+    path="/oauth2/callback"
+    element={<OAuth2Callback />}
 />
 
             </Routes>

@@ -8,6 +8,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.example.AIResumeScreeneer.security.GoogleOAuth2SuccessHandler;
 import com.example.AIResumeScreeneer.security.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.security.config.Customizer;
 public class WebSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -140,7 +142,9 @@ public class WebSecurityConfig {
                 .anyRequest().authenticated()
             )
 
-          .oauth2Login(Customizer.withDefaults())
+          .oauth2Login(oauth2 -> oauth2
+    .successHandler(googleOAuth2SuccessHandler)
+)
 
 .addFilterBefore(
     jwtAuthenticationFilter,
