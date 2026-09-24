@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.AIResumeScreeneer.repository.ActivityLogRepository;
 import com.example.AIResumeScreeneer.repository.RecruiterNoteRepository;
+import com.example.AIResumeScreeneer.repository.InterviewRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class ResumeService {
 
     private final ActivityLogRepository activityLogRepository;
 private final RecruiterNoteRepository recruiterNoteRepository;
+private final InterviewRepository interviewRepository;
 
     public String uploadResume(
             MultipartFile file,
@@ -236,14 +238,17 @@ public void deleteResume(Long id) throws IOException {
                     .orElseThrow(() ->
                             new RuntimeException("Resume not found"));
 
-    // 1. Delete activity logs related to this resume
-    activityLogRepository.deleteByResumeId(id);
+   // 1. Delete interviews related to this resume
+interviewRepository.deleteByResume(resume);
 
-    // 2. Delete recruiter notes related to this resume
-    recruiterNoteRepository.deleteByResumeId(id);
+// 2. Delete activity logs related to this resume
+activityLogRepository.deleteByResumeId(id);
 
-    // 3. Delete resume from database
-    resumeRepository.delete(resume);
+// 3. Delete recruiter notes related to this resume
+recruiterNoteRepository.deleteByResumeId(id);
+
+// 4. Delete resume from database
+resumeRepository.delete(resume);
 
     // 4. Delete physical PDF file
     if (resume.getFilePath() != null) {
@@ -296,15 +301,17 @@ public void deleteOwnResume(
         );
     }
 
-    // Delete activity logs
-    activityLogRepository.deleteByResumeId(id);
+    // 1. Delete interviews related to this resume
+interviewRepository.deleteByResume(resume);
 
-    // Delete recruiter notes
-    recruiterNoteRepository.deleteByResumeId(id);
+// 2. Delete activity logs related to this resume
+activityLogRepository.deleteByResumeId(id);
 
-    // Delete database record
-    resumeRepository.delete(resume);
+// 3. Delete recruiter notes related to this resume
+recruiterNoteRepository.deleteByResumeId(id);
 
+// 4. Delete resume from database
+resumeRepository.delete(resume);
     // Delete physical file
     if (resume.getFilePath() != null) {
 

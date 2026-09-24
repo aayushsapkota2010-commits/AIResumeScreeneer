@@ -572,10 +572,10 @@ public List<ActivityLog> getLogs() {
 
 
 @GetMapping("/candidate-dashboard")
-public CandidateDashboardResponse
-candidateDashboard(
+public CandidateDashboardResponse candidateDashboard(
+        Principal principal) {
 
-        @RequestParam String email) {
+    String email = principal.getName();
 
     return candidateDashboardService
             .getDashboard(email);

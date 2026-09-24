@@ -3,8 +3,8 @@ package com.example.AIResumeScreeneer.service;
 import org.springframework.stereotype.Service;
 
 import com.example.AIResumeScreeneer.dto.CandidateDashboardResponse;
-import com.example.AIResumeScreeneer.entity.Resume;
-import com.example.AIResumeScreeneer.repository.ResumeRepository;
+import com.example.AIResumeScreeneer.entity.Application;
+import com.example.AIResumeScreeneer.repository.ApplicationRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,31 +12,56 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CandidateDashboardService {
 
-    private final ResumeRepository resumeRepository;
+    private final ApplicationRepository applicationRepository;
 
-    public CandidateDashboardResponse getDashboard(
-            String email) {
+    public CandidateDashboardResponse getDashboard(String email) {
 
-        Resume resume =
-                resumeRepository
-                        .findTopByCandidateEmailOrderByIdDesc(
-                                email)
-                        .orElseThrow();
+        Application application =
+                applicationRepository
+                        .findByCandidateEmailOrderByAppliedAtDesc(email)
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
 
-        return CandidateDashboardResponse
-                .builder()
+        // Candidate has not applied to any job yet
+        if (application == null) {
+
+            return CandidateDashboardResponse.builder()
+                    .resumeId(null)
+                    .atsScore(null)
+                    .matchScore(null)
+                    .status("NOT_APPLIED")
+                    .uploadedAt(null)
+                    .candidateEmail(email)
+                    .build();
+        }
+
+        return CandidateDashboardResponse.builder()
+
                 .resumeId(
-                        resume.getId())
+                        application.getResume().getId()
+                )
+
                 .atsScore(
-                        resume.getAtsScore())
+                        application.getAtsScore()
+                )
+
                 .matchScore(
-                        resume.getMatchScore())
+                        application.getMatchScore()
+                )
+
                 .status(
-                        resume.getStatus().name())
+                        application.getStatus().name()
+                )
+
                 .uploadedAt(
-                        resume.getUploadedAt().toString())
+                        application.getAppliedAt().toString()
+                )
+
                 .candidateEmail(
-                        resume.getCandidateEmail())
+                        application.getCandidateEmail()
+                )
+
                 .build();
     }
 }
