@@ -1,5 +1,6 @@
 package com.example.AIResumeScreeneer.contoller;
 
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,24 +20,49 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
+
+    // ============================================================
+    // USER - MY NOTIFICATIONS
+    // ============================================================
+
     @GetMapping
-    public List<Notification> getNotifications() {
+    public List<Notification> getNotifications(
+            Principal principal) {
 
         return notificationService
-                .getAllNotifications();
+                .getCandidateNotifications(
+                        principal.getName()
+                );
     }
+
+
+    // ============================================================
+    // USER - MY UNREAD NOTIFICATIONS
+    // ============================================================
 
     @GetMapping("/unread")
-    public List<Notification> getUnreadNotifications() {
+    public List<Notification> getUnreadNotifications(
+            Principal principal) {
 
         return notificationService
-                .getUnreadNotifications();
+                .getUnreadCandidateNotifications(
+                        principal.getName()
+                );
     }
 
-    @PutMapping("/read-all")
-    public String markAllAsRead() {
 
-        notificationService.markAllAsRead();
+    // ============================================================
+    // USER - MARK MY NOTIFICATIONS AS READ
+    // ============================================================
+
+    @PutMapping("/read-all")
+    public String markAllAsRead(
+            Principal principal) {
+
+        notificationService
+                .markCandidateNotificationsAsRead(
+                        principal.getName()
+                );
 
         return "Notifications marked as read";
     }

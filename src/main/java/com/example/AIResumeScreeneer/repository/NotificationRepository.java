@@ -12,4 +12,12 @@ public interface NotificationRepository
     List<Notification> findAllByOrderByCreatedAtDesc();
 
     List<Notification> findByReadFalseOrderByCreatedAtDesc();
+
+    List<Notification> findByRecipientEmailOrderByCreatedAtDesc(
+            String recipientEmail
+    );
+
+    List<Notification> findByRecipientEmailAndReadFalseOrderByCreatedAtDesc(
+            String recipientEmail
+    );
 }

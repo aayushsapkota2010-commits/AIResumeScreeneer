@@ -385,17 +385,18 @@ public Resume updateStatus(
     System.out.println("Resume = " + resume.getFileName());
     System.out.println("=================================");
 
-    notificationService.createNotification(
-            "Candidate status updated",
-            resume.getFileName()
-                    + " moved from "
-                    + (oldStatus != null
-                            ? oldStatus.name()
-                            : "NEW")
-                    + " to "
-                    + status.name(),
-            "STATUS_CHANGE"
-    );
+    notificationService.createCandidateNotification(
+        resume.getCandidateEmail(),
+        "Application status updated",
+        "Your application has moved from "
+                + (oldStatus != null
+                        ? oldStatus.name()
+                        : "NEW")
+                + " to "
+                + status.name()
+                + ".",
+        "STATUS_CHANGE"
+);
 
 } else {
 

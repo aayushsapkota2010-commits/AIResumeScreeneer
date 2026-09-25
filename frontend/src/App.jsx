@@ -33,6 +33,7 @@ import JobDetails from "./pages/JobDetails";
 import ApplyJob from "./pages/ApplyJob";
 import MyApplications from "./pages/MyApplications";
 import OAuth2Callback from "./pages/OAuth2Callback";
+import Notifications from "./pages/Notifications";
 
 function App() {
 
@@ -412,6 +413,17 @@ function App() {
 <Route
     path="/oauth2/callback"
     element={<OAuth2Callback />}
+/>
+
+<Route
+    path="/notifications"
+    element={
+        <ProtectedRoute
+            allowedRoles={["USER", "ADMIN"]}
+        >
+            <Notifications />
+        </ProtectedRoute>
+    }
 />
 
             </Routes>

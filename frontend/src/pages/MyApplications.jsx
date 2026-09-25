@@ -892,20 +892,18 @@ function MyApplications() {
 
                                                     </div>
 
-                                                    {resume?.id && (
-
-                                                        <button
-                                                            onClick={() =>
-                                                                window.open(
-                                                                    `/api/resume/view/${resume.id}`,
-                                                                    "_blank"
-                                                                )
-                                                            }
-                                                        >
-                                                            View Resume
-                                                        </button>
-
-                                                    )}
+                                                   {resume?.id && (
+    <button
+        onClick={() =>
+            window.open(
+                `${import.meta.env.VITE_API_URL}/resume/view/${resume.id}`,
+                "_blank"
+            )
+        }
+    >
+        View Resume
+    </button>
+)}
 
                                                 </div>
 

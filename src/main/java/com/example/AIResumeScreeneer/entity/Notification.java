@@ -34,8 +34,11 @@ public class Notification {
 
     private String type;
 
-@Column(name = "is_read")
-private boolean read;
+    // Candidate who should receive this notification
+    private String recipientEmail;
+
+    @Column(name = "is_read")
+    private boolean read;
 
     private LocalDateTime createdAt;
 }
