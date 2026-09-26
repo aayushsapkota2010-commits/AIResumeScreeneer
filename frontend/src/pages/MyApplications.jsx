@@ -99,6 +99,66 @@ function MyApplications() {
         }
     };
 
+    const getStatusMessage = (status) => {
+    switch (status) {
+        case "APPLIED":
+            return {
+                title: "Application submitted",
+                message:
+                    "Your application has been successfully submitted and is waiting for recruiter review.",
+                className: "action-applied"
+            };
+
+        case "SCREENING":
+            return {
+                title: "Application under review",
+                message:
+                    "The recruiter is currently reviewing your application.",
+                className: "action-screening"
+            };
+
+        case "SHORTLISTED":
+            return {
+                title: "You've been shortlisted",
+                message:
+                    "Your profile has been shortlisted for the next stage of the recruitment process.",
+                className: "action-shortlisted"
+            };
+
+        case "INTERVIEW":
+            return {
+                title: "Interview stage",
+                message:
+                    "Your application has reached the interview stage. Check your notifications for any interview details.",
+                className: "action-interview"
+            };
+
+        case "SELECTED":
+            return {
+                title: "Congratulations! 🎉",
+                message:
+                    "You have been selected for this position. Check your notifications for further details.",
+                className: "action-selected"
+            };
+
+        case "REJECTED":
+            return {
+                title: "Application update",
+                message:
+                    "This application was not selected for the next stage. You can continue exploring other opportunities.",
+                className: "action-rejected"
+            };
+
+        default:
+            return {
+                title: "Application status",
+                message:
+                    "Your application status has been updated.",
+                className: "action-applied"
+            };
+    }
+};
+
     const formatStatus = (status) => {
 
         if (!status) {
@@ -640,6 +700,26 @@ function MyApplications() {
                                             {renderTimeline(
                                                 application.status
                                             )}
+                                            {(() => {
+    const statusMessage =
+        getStatusMessage(application.status);
+
+    return (
+        <div
+            className={`application-status-message ${statusMessage.className}`}
+        >
+            <div className="status-message-content">
+                <strong>
+                    {statusMessage.title}
+                </strong>
+
+                <p>
+                    {statusMessage.message}
+                </p>
+            </div>
+        </div>
+    );
+})()}
 
                                         </div>
 

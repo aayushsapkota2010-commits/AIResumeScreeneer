@@ -21,18 +21,17 @@ import lombok.RequiredArgsConstructor;
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
+
     private final JobRepository jobRepository;
+
     private final ResumeRepository resumeRepository;
 
-    /*
-     * Resume quality / ATS analysis
-     */
     private final AtsService atsService;
 
-    /*
-     * Job-specific resume matching
-     */
     private final JobMatchingService jobMatchingService;
+
+    // NEW
+    private final NotificationService notificationService;
 
 
     // ============================================================
@@ -45,18 +44,10 @@ public class ApplicationService {
             Long resumeId,
             String candidateEmail) {
 
-        // ========================================================
-        // 1. FIND JOB
-        // ========================================================
-
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() ->
                         new RuntimeException("Job not found"));
 
-
-        // ========================================================
-        // 2. JOB MUST BE OPEN
-        // ========================================================
 
         if (!"OPEN".equalsIgnoreCase(job.getStatus())) {
 
@@ -65,18 +56,10 @@ public class ApplicationService {
         }
 
 
-        // ========================================================
-        // 3. FIND RESUME
-        // ========================================================
-
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() ->
                         new RuntimeException("Resume not found"));
 
-
-        // ========================================================
-        // 4. CHECK RESUME OWNERSHIP
-        // ========================================================
 
         if (!candidateEmail.equalsIgnoreCase(
                 resume.getCandidateEmail())) {
@@ -85,10 +68,6 @@ public class ApplicationService {
                     "You are not allowed to use this resume");
         }
 
-
-        // ========================================================
-        // 5. PREVENT DUPLICATE APPLICATION
-        // ========================================================
 
         if (applicationRepository.existsByJobIdAndResumeId(
                 jobId,
@@ -99,20 +78,12 @@ public class ApplicationService {
         }
 
 
-        // ========================================================
-        // 6. GET RESUME TEXT
-        // ========================================================
-
         String resumeText = resume.getExtractedText();
 
         if (resumeText == null) {
             resumeText = "";
         }
 
-
-        // ========================================================
-        // 7. GET JOB DESCRIPTION
-        // ========================================================
 
         String jobDescription = job.getDescription();
 
@@ -121,10 +92,6 @@ public class ApplicationService {
         }
 
 
-        // ========================================================
-        // 8. JOB-SPECIFIC MATCHING
-        // ========================================================
-
         var matchResult =
                 jobMatchingService.matchResume(
                         resumeText,
@@ -132,27 +99,15 @@ public class ApplicationService {
                 );
 
 
-        // ========================================================
-        // 9. GENERIC ATS / RESUME QUALITY SCORE
-        // ========================================================
-
         int atsScore =
                 atsService.calculateScore(
                         resumeText
                 );
 
 
-        // ========================================================
-        // 10. GET MATCH SCORE
-        // ========================================================
-
         int matchScore =
                 matchResult.getMatchPercentage();
 
-
-        // ========================================================
-        // 11. LOG ANALYSIS
-        // ========================================================
 
         System.out.println();
         System.out.println("========================================");
@@ -198,56 +153,31 @@ public class ApplicationService {
         System.out.println();
 
 
-        // ========================================================
-        // 12. CREATE APPLICATION
-        // ========================================================
-
         LocalDateTime now =
                 LocalDateTime.now();
 
+
         Application application =
                 Application.builder()
-
                         .job(job)
-
                         .resume(resume)
-
                         .candidateEmail(candidateEmail)
-
-                        .status(
-                                ApplicationStatus.APPLIED
-                        )
-
+                        .status(ApplicationStatus.APPLIED)
                         .appliedAt(now)
-
                         .updatedAt(now)
-
-                        // -------------------------------
-                        // Job-specific analysis
-                        // -------------------------------
-
                         .atsScore(atsScore)
-
                         .matchScore(matchScore)
-
                         .matchedSkills(
                                 matchResult.getMatchedSkills()
                         )
-
                         .missingSkills(
                                 matchResult.getMissingSkills()
                         )
-
                         .recommendation(
                                 matchResult.getRecommendation()
                         )
-
                         .build();
 
-
-        // ========================================================
-        // 13. SAVE APPLICATION
-        // ========================================================
 
         return applicationRepository.save(application);
     }
@@ -278,5 +208,147 @@ public class ApplicationService {
                 .findByJobIdOrderByAppliedAtDesc(
                         jobId
                 );
+    }
+
+
+    // ============================================================
+    // GET ALL APPLICATIONS
+    // USED BY RECRUITER PIPELINE
+    // ============================================================
+
+    public List<Application> getAllApplications() {
+
+        return applicationRepository
+                .findAllByOrderByAppliedAtDesc();
+    }
+
+
+    // ============================================================
+    // UPDATE APPLICATION STATUS
+    // ============================================================
+
+    @Transactional
+    public Application updateStatus(
+            Long applicationId,
+            ApplicationStatus newStatus) {
+
+        // --------------------------------------------------------
+        // 1. FIND APPLICATION
+        // --------------------------------------------------------
+
+        Application application =
+                applicationRepository.findById(applicationId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Application not found"
+                                ));
+
+
+        // --------------------------------------------------------
+        // 2. GET OLD STATUS
+        // --------------------------------------------------------
+
+        ApplicationStatus oldStatus =
+                application.getStatus();
+
+
+        // --------------------------------------------------------
+        // 3. DON'T CREATE DUPLICATE NOTIFICATION
+        // --------------------------------------------------------
+
+        if (oldStatus == newStatus) {
+
+            return application;
+        }
+
+
+        // --------------------------------------------------------
+        // 4. UPDATE APPLICATION
+        // --------------------------------------------------------
+
+        application.setStatus(newStatus);
+
+        application.setUpdatedAt(
+                LocalDateTime.now()
+        );
+
+
+        // --------------------------------------------------------
+        // 5. SAVE APPLICATION
+        // --------------------------------------------------------
+
+        Application updatedApplication =
+                applicationRepository.save(application);
+
+
+        // --------------------------------------------------------
+        // 6. CANDIDATE NOTIFICATION
+        // --------------------------------------------------------
+
+        String candidateEmail =
+                application.getCandidateEmail();
+
+
+        if (candidateEmail != null &&
+                !candidateEmail.isBlank()) {
+
+            String jobTitle =
+                    application.getJob() != null &&
+                    application.getJob().getTitle() != null
+                            ? application.getJob().getTitle()
+                            : "your application";
+
+
+            notificationService.createCandidateNotification(
+
+                    candidateEmail,
+
+                    "Application status updated",
+
+                    "Your application for "
+                            + jobTitle
+                            + " has moved from "
+                            + formatStatus(oldStatus)
+                            + " to "
+                            + formatStatus(newStatus)
+                            + ".",
+
+                    "APPLICATION_STATUS_CHANGE"
+            );
+        }
+
+
+        // --------------------------------------------------------
+        // 7. LOG
+        // --------------------------------------------------------
+
+        System.out.println(
+                "Application #" +
+                        applicationId +
+                        " status changed: " +
+                        oldStatus +
+                        " -> " +
+                        newStatus
+        );
+
+
+        return updatedApplication;
+    }
+
+
+    // ============================================================
+    // FORMAT STATUS
+    // ============================================================
+
+    private String formatStatus(
+            ApplicationStatus status) {
+
+        if (status == null) {
+            return "Applied";
+        }
+
+        return status.name()
+                .toLowerCase()
+                .replace("_", " ");
     }
 }

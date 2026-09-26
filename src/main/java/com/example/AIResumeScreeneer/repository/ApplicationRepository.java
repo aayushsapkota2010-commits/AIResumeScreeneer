@@ -9,13 +9,22 @@ import com.example.AIResumeScreeneer.entity.Application;
 public interface ApplicationRepository
         extends JpaRepository<Application, Long> {
 
-    List<Application> findByCandidateEmailOrderByAppliedAtDesc(
-            String candidateEmail);
+    List<Application>
+    findByCandidateEmailOrderByAppliedAtDesc(
+            String candidateEmail
+    );
 
-    List<Application> findByJobIdOrderByAppliedAtDesc(
-            Long jobId);
+    List<Application>
+    findByJobIdOrderByAppliedAtDesc(
+            Long jobId
+    );
 
     boolean existsByJobIdAndResumeId(
             Long jobId,
-            Long resumeId);
+            Long resumeId
+    );
+
+    // NEW
+    List<Application>
+    findAllByOrderByAppliedAtDesc();
 }

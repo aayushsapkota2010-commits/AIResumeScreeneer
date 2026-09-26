@@ -6,7 +6,9 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.AIResumeScreeneer.dto.StatusUpdateRequest;
 import com.example.AIResumeScreeneer.entity.Application;
+import com.example.AIResumeScreeneer.entity.ApplicationStatus;
 import com.example.AIResumeScreeneer.service.ApplicationService;
 
 import lombok.RequiredArgsConstructor;
@@ -69,4 +71,44 @@ public class ApplicationController {
                 applicationService.getApplicationsForJob(jobId)
         );
     }
+    @GetMapping("/pipeline")
+public ResponseEntity<List<Application>> getPipeline() {
+
+    return ResponseEntity.ok(
+            applicationService.getAllApplications()
+    );
+}
+
+@PutMapping("/{id}/status")
+public ResponseEntity<?> updateStatus(
+        @PathVariable Long id,
+        @RequestBody StatusUpdateRequest request) {
+
+    try {
+
+        ApplicationStatus newStatus =
+                ApplicationStatus.valueOf(
+                        request.getStatus()
+                                .toUpperCase()
+                );
+
+        Application updated =
+                applicationService.updateStatus(
+                        id,
+                        newStatus
+                );
+
+        return ResponseEntity.ok(updated);
+
+    } catch (IllegalArgumentException e) {
+
+        return ResponseEntity.badRequest()
+                .body("Invalid application status");
+
+    } catch (RuntimeException e) {
+
+        return ResponseEntity.badRequest()
+                .body(e.getMessage());
+    }
+}
 }

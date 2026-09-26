@@ -3,7 +3,7 @@ import api from "../api/api";
 
 function PipelineBoard() {
 
-    const [resumes, setResumes] = useState([]);
+    const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState(null);
     const [error, setError] = useState("");
@@ -17,13 +17,14 @@ function PipelineBoard() {
         "REJECTED"
     ];
 
+
     // =========================================================
-    // LOAD RESUMES
+    // LOAD APPLICATIONS
     // =========================================================
 
     useEffect(() => {
 
-        const loadResumes = async () => {
+        const loadApplications = async () => {
 
             try {
 
@@ -31,9 +32,9 @@ function PipelineBoard() {
                 setError("");
 
                 const response =
-                    await api.get("/resume/all");
+                    await api.get("/applications/pipeline");
 
-                setResumes(
+                setApplications(
                     Array.isArray(response.data)
                         ? response.data
                         : []
@@ -42,7 +43,7 @@ function PipelineBoard() {
             } catch (error) {
 
                 console.error(
-                    "Failed to load pipeline:",
+                    "Failed to load application pipeline:",
                     error
                 );
 
@@ -57,15 +58,16 @@ function PipelineBoard() {
             }
         };
 
-        loadResumes();
+        loadApplications();
 
     }, []);
 
+
     // =========================================================
-    // GROUP RESUMES ONCE
+    // GROUP APPLICATIONS
     // =========================================================
 
-    const groupedResumes = useMemo(() => {
+    const groupedApplications = useMemo(() => {
 
         const groups = {};
 
@@ -73,54 +75,59 @@ function PipelineBoard() {
             groups[status] = [];
         });
 
-        resumes.forEach((resume) => {
+        applications.forEach((application) => {
 
             const status =
-                resume.status || "APPLIED";
+                application.status || "APPLIED";
 
             if (groups[status]) {
-                groups[status].push(resume);
+                groups[status].push(application);
             }
 
         });
 
         return groups;
 
-    }, [resumes]);
+    }, [applications]);
+
 
     // =========================================================
-    // UPDATE STATUS
+    // UPDATE APPLICATION STATUS
     // =========================================================
 
     const updateStatus = async (
-        id,
+        applicationId,
         newStatus
     ) => {
 
-        const previousResumes = resumes;
+        const previousApplications =
+            applications;
+
 
         // -----------------------------------------------------
-        // Optimistic UI update
+        // OPTIMISTIC UI
         // -----------------------------------------------------
 
-        setResumes((current) =>
-            current.map((resume) =>
-                resume.id === id
+        setApplications((current) =>
+            current.map((application) =>
+                application.id === applicationId
                     ? {
-                        ...resume,
+                        ...application,
                         status: newStatus
                     }
-                    : resume
+                    : application
             )
         );
 
-        setUpdatingId(id);
+
+        setUpdatingId(applicationId);
         setError("");
+
 
         try {
 
             await api.put(
-                `/resume/status/${id}`,
+                `/applications/${applicationId}/status`,
                 {
                     status: newStatus
                 }
@@ -129,15 +136,18 @@ function PipelineBoard() {
         } catch (error) {
 
             console.error(
-                "Failed to update status:",
+                "Failed to update application status:",
                 error
             );
 
+
             // -------------------------------------------------
-            // Roll back if backend request fails
+            // ROLLBACK
             // -------------------------------------------------
 
-            setResumes(previousResumes);
+            setApplications(
+                previousApplications
+            );
 
             setError(
                 "Failed to update candidate status."
@@ -149,6 +159,7 @@ function PipelineBoard() {
 
         }
     };
+
 
     // =========================================================
     // LOADING
@@ -170,6 +181,7 @@ function PipelineBoard() {
 
     }
 
+
     // =========================================================
     // MAIN UI
     // =========================================================
@@ -185,9 +197,7 @@ function PipelineBoard() {
             }}
         >
 
-            {/* =================================================
-                HEADER
-            ================================================= */}
+            {/* HEADER */}
 
             <div
                 style={{
@@ -214,15 +224,14 @@ function PipelineBoard() {
                         fontSize: "14px"
                     }}
                 >
-                    Manage candidates through every stage
-                    of the recruitment process.
+                    Manage applications through every
+                    stage of the recruitment process.
                 </p>
 
             </div>
 
-            {/* =================================================
-                ERROR
-            ================================================= */}
+
+            {/* ERROR */}
 
             {error && (
 
@@ -242,9 +251,8 @@ function PipelineBoard() {
 
             )}
 
-            {/* =================================================
-                PIPELINE
-            ================================================= */}
+
+            {/* PIPELINE */}
 
             <div
                 style={{
@@ -260,7 +268,8 @@ function PipelineBoard() {
                 {statuses.map((status) => {
 
                     const candidates =
-                        groupedResumes[status] || [];
+                        groupedApplications[status] || [];
+
 
                     return (
 
@@ -268,16 +277,15 @@ function PipelineBoard() {
                             key={status}
                             style={{
                                 background: "#f8fafc",
-                                border: "1px solid #e2e8f0",
+                                border:
+                                    "1px solid #e2e8f0",
                                 borderRadius: "14px",
                                 minHeight: "360px",
                                 overflow: "hidden"
                             }}
                         >
 
-                            {/* =================================
-                                COLUMN HEADER
-                            ================================= */}
+                            {/* COLUMN HEADER */}
 
                             <div
                                 style={{
@@ -311,6 +319,7 @@ function PipelineBoard() {
                                         {status}
                                     </h3>
 
+
                                     <span
                                         style={{
                                             minWidth: "24px",
@@ -321,9 +330,12 @@ function PipelineBoard() {
                                                 "center",
                                             justifyContent:
                                                 "center",
-                                            borderRadius: "999px",
-                                            background: "#eef2ff",
-                                            color: "#4f46e5",
+                                            borderRadius:
+                                                "999px",
+                                            background:
+                                                "#eef2ff",
+                                            color:
+                                                "#4f46e5",
                                             fontSize: "12px",
                                             fontWeight: 700
                                         }}
@@ -335,9 +347,8 @@ function PipelineBoard() {
 
                             </div>
 
-                            {/* =================================
-                                CARDS
-                            ================================= */}
+
+                            {/* CARDS */}
 
                             <div
                                 style={{
@@ -349,10 +360,14 @@ function PipelineBoard() {
 
                                     <div
                                         style={{
-                                            padding: "28px 10px",
-                                            textAlign: "center",
-                                            color: "#94a3b8",
-                                            fontSize: "13px"
+                                            padding:
+                                                "28px 10px",
+                                            textAlign:
+                                                "center",
+                                            color:
+                                                "#94a3b8",
+                                            fontSize:
+                                                "13px"
                                         }}
                                     >
                                         No candidates
@@ -361,172 +376,273 @@ function PipelineBoard() {
                                 ) : (
 
                                     candidates.map(
-                                        (resume) => (
+                                        (application) => {
 
-                                            <div
-                                                key={resume.id}
-                                                style={{
-                                                    background:
-                                                        "#ffffff",
-                                                    border:
-                                                        "1px solid #e2e8f0",
-                                                    borderRadius:
-                                                        "10px",
-                                                    padding:
-                                                        "14px",
-                                                    marginBottom:
-                                                        "10px",
-                                                    boxShadow:
-                                                        "0 1px 2px rgba(15, 23, 42, 0.04)"
-                                                }}
-                                            >
+                                            const job =
+                                                application.job;
 
-                                                {/* FILE NAME */}
+                                            const resume =
+                                                application.resume;
+
+
+                                            return (
 
                                                 <div
-                                                    title={
-                                                        resume.fileName
+                                                    key={
+                                                        application.id
                                                     }
                                                     style={{
-                                                        fontSize:
-                                                            "14px",
-                                                        fontWeight:
-                                                            600,
-                                                        color:
-                                                            "#1e293b",
-                                                        lineHeight:
-                                                            "20px",
-                                                        overflow:
-                                                            "hidden",
-                                                        textOverflow:
-                                                            "ellipsis",
-                                                        whiteSpace:
-                                                            "nowrap",
-                                                        marginBottom:
-                                                            "8px"
-                                                    }}
-                                                >
-                                                    {resume.fileName ||
-                                                        "Unnamed Resume"}
-                                                </div>
-
-                                                {/* ATS */}
-
-                                                <div
-                                                    style={{
-                                                        fontSize:
-                                                            "13px",
-                                                        color:
-                                                            "#64748b",
-                                                        marginBottom:
-                                                            "12px"
-                                                    }}
-                                                >
-                                                    ATS Score:{" "}
-
-                                                    <strong
-                                                        style={{
-                                                            color:
-                                                                "#334155"
-                                                        }}
-                                                    >
-                                                        {resume.atsScore ??
-                                                            "N/A"}
-                                                    </strong>
-                                                </div>
-
-                                                {/* STATUS */}
-
-                                                <select
-                                                    value={
-                                                        resume.status ||
-                                                        "APPLIED"
-                                                    }
-                                                    disabled={
-                                                        updatingId ===
-                                                        resume.id
-                                                    }
-                                                    onChange={(
-                                                        event
-                                                    ) =>
-                                                        updateStatus(
-                                                            resume.id,
-                                                            event
-                                                                .target
-                                                                .value
-                                                        )
-                                                    }
-                                                    style={{
-                                                        width:
-                                                            "100%",
-                                                        height:
-                                                            "34px",
-                                                        padding:
-                                                            "0 9px",
-                                                        border:
-                                                            "1px solid #cbd5e1",
-                                                        borderRadius:
-                                                            "7px",
                                                         background:
                                                             "#ffffff",
-                                                        color:
-                                                            "#334155",
-                                                        fontSize:
-                                                            "12px",
-                                                        cursor:
-                                                            updatingId ===
-                                                            resume.id
-                                                                ? "wait"
-                                                                : "pointer",
-                                                        outline:
-                                                            "none"
+                                                        border:
+                                                            "1px solid #e2e8f0",
+                                                        borderRadius:
+                                                            "10px",
+                                                        padding:
+                                                            "14px",
+                                                        marginBottom:
+                                                            "10px",
+                                                        boxShadow:
+                                                            "0 1px 2px rgba(15, 23, 42, 0.04)"
                                                     }}
                                                 >
 
-                                                    {statuses.map(
-                                                        (
-                                                            option
-                                                        ) => (
-
-                                                            <option
-                                                                key={
-                                                                    option
-                                                                }
-                                                                value={
-                                                                    option
-                                                                }
-                                                            >
-                                                                {
-                                                                    option
-                                                                }
-                                                            </option>
-
-                                                        )
-                                                    )}
-
-                                                </select>
-
-                                                {updatingId ===
-                                                    resume.id && (
+                                                    {/* JOB */}
 
                                                     <div
                                                         style={{
-                                                            marginTop:
-                                                                "7px",
                                                             fontSize:
-                                                                "11px",
+                                                                "14px",
+                                                            fontWeight:
+                                                                600,
                                                             color:
-                                                                "#64748b"
+                                                                "#1e293b",
+                                                            lineHeight:
+                                                                "20px",
+                                                            marginBottom:
+                                                                "4px"
                                                         }}
                                                     >
-                                                        Updating...
+                                                        {job?.title ||
+                                                            "Job Application"}
                                                     </div>
 
-                                                )}
 
-                                            </div>
+                                                    {/* COMPANY */}
 
-                                        )
+                                                    <div
+                                                        style={{
+                                                            fontSize:
+                                                                "12px",
+                                                            color:
+                                                                "#64748b",
+                                                            marginBottom:
+                                                                "8px"
+                                                        }}
+                                                    >
+                                                        {job?.company ||
+                                                            "Company"}
+                                                    </div>
+
+
+                                                    {/* CANDIDATE */}
+
+                                                    <div
+                                                        style={{
+                                                            fontSize:
+                                                                "12px",
+                                                            color:
+                                                                "#475569",
+                                                            marginBottom:
+                                                                "8px",
+                                                            overflow:
+                                                                "hidden",
+                                                            textOverflow:
+                                                                "ellipsis",
+                                                            whiteSpace:
+                                                                "nowrap"
+                                                        }}
+                                                        title={
+                                                            application.candidateEmail
+                                                        }
+                                                    >
+                                                        Candidate:{" "}
+                                                        {application.candidateEmail ||
+                                                            "Unknown"}
+                                                    </div>
+
+
+                                                    {/* RESUME */}
+
+                                                    <div
+                                                        style={{
+                                                            fontSize:
+                                                                "12px",
+                                                            color:
+                                                                "#64748b",
+                                                            marginBottom:
+                                                                "10px",
+                                                            overflow:
+                                                                "hidden",
+                                                            textOverflow:
+                                                                "ellipsis",
+                                                            whiteSpace:
+                                                                "nowrap"
+                                                        }}
+                                                        title={
+                                                            resume?.fileName
+                                                        }
+                                                    >
+                                                        Resume:{" "}
+                                                        {resume?.fileName ||
+                                                            "No resume"}
+                                                    </div>
+
+
+                                                    {/* SCORES */}
+
+                                                    <div
+                                                        style={{
+                                                            display:
+                                                                "flex",
+                                                            gap:
+                                                                "10px",
+                                                            marginBottom:
+                                                                "12px",
+                                                            fontSize:
+                                                                "12px"
+                                                        }}
+                                                    >
+
+                                                        <span
+                                                            style={{
+                                                                color:
+                                                                    "#475569"
+                                                            }}
+                                                        >
+                                                            ATS:{" "}
+                                                            <strong>
+                                                                {application.atsScore ??
+                                                                    "N/A"}
+                                                            </strong>
+                                                        </span>
+
+
+                                                        <span
+                                                            style={{
+                                                                color:
+                                                                    "#475569"
+                                                            }}
+                                                        >
+                                                            Match:{" "}
+                                                            <strong>
+                                                                {application.matchScore ??
+                                                                    "N/A"}
+                                                                {application.matchScore !=
+                                                                    null
+                                                                    ? "%"
+                                                                    : ""}
+                                                            </strong>
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    {/* STATUS */}
+
+                                                    <select
+                                                        value={
+                                                            application.status ||
+                                                            "APPLIED"
+                                                        }
+                                                        disabled={
+                                                            updatingId ===
+                                                            application.id
+                                                        }
+                                                        onChange={(
+                                                            event
+                                                        ) =>
+                                                            updateStatus(
+                                                                application.id,
+                                                                event
+                                                                    .target
+                                                                    .value
+                                                            )
+                                                        }
+                                                        style={{
+                                                            width:
+                                                                "100%",
+                                                            height:
+                                                                "34px",
+                                                            padding:
+                                                                "0 9px",
+                                                            border:
+                                                                "1px solid #cbd5e1",
+                                                            borderRadius:
+                                                                "7px",
+                                                            background:
+                                                                "#ffffff",
+                                                            color:
+                                                                "#334155",
+                                                            fontSize:
+                                                                "12px",
+                                                            cursor:
+                                                                updatingId ===
+                                                                application.id
+                                                                    ? "wait"
+                                                                    : "pointer",
+                                                            outline:
+                                                                "none"
+                                                        }}
+                                                    >
+
+                                                        {statuses.map(
+                                                            (
+                                                                option
+                                                            ) => (
+
+                                                                <option
+                                                                    key={
+                                                                        option
+                                                                    }
+                                                                    value={
+                                                                        option
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        option
+                                                                    }
+                                                                </option>
+
+                                                            )
+                                                        )}
+
+                                                    </select>
+
+
+                                                    {updatingId ===
+                                                        application.id && (
+
+                                                        <div
+                                                            style={{
+                                                                marginTop:
+                                                                    "7px",
+                                                                fontSize:
+                                                                    "11px",
+                                                                color:
+                                                                    "#64748b"
+                                                            }}
+                                                        >
+                                                            Updating...
+                                                        </div>
+
+                                                    )}
+
+                                                </div>
+
+                                            );
+
+                                        }
                                     )
 
                                 )}
