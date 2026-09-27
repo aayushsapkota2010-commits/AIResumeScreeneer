@@ -3,6 +3,7 @@ package com.example.AIResumeScreeneer.contoller;
 import java.security.Principal;
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,14 +21,26 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-
     // ============================================================
-    // USER - MY NOTIFICATIONS
+    // MY NOTIFICATIONS
+    // ADMIN  -> ALL RECRUITER/GLOBAL NOTIFICATIONS
+    // USER   -> ONLY CANDIDATE'S NOTIFICATIONS
     // ============================================================
 
     @GetMapping
     public List<Notification> getNotifications(
-            Principal principal) {
+            Principal principal,
+            Authentication authentication) {
+
+        if (authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority()
+                                .equals("ROLE_ADMIN"))) {
+
+            return notificationService
+                    .getAllNotifications();
+        }
 
         return notificationService
                 .getCandidateNotifications(
@@ -35,14 +48,24 @@ public class NotificationController {
                 );
     }
 
-
     // ============================================================
-    // USER - MY UNREAD NOTIFICATIONS
+    // UNREAD NOTIFICATIONS
     // ============================================================
 
     @GetMapping("/unread")
     public List<Notification> getUnreadNotifications(
-            Principal principal) {
+            Principal principal,
+            Authentication authentication) {
+
+        if (authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority()
+                                .equals("ROLE_ADMIN"))) {
+
+            return notificationService
+                    .getUnreadNotifications();
+        }
 
         return notificationService
                 .getUnreadCandidateNotifications(
@@ -50,14 +73,25 @@ public class NotificationController {
                 );
     }
 
-
     // ============================================================
-    // USER - MARK MY NOTIFICATIONS AS READ
+    // MARK NOTIFICATIONS AS READ
     // ============================================================
 
     @PutMapping("/read-all")
     public String markAllAsRead(
-            Principal principal) {
+            Principal principal,
+            Authentication authentication) {
+
+        if (authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority()
+                                .equals("ROLE_ADMIN"))) {
+
+            notificationService.markAllAsRead();
+
+            return "All notifications marked as read";
+        }
 
         notificationService
                 .markCandidateNotificationsAsRead(

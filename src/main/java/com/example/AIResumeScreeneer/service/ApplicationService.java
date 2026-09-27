@@ -315,6 +315,16 @@ public class ApplicationService {
 
                     "APPLICATION_STATUS_CHANGE"
             );
+
+            notificationService.createNotification(
+        "Application withdrawn",
+        "Candidate "
+                + candidateEmail
+                + " has withdrawn their application for "
+                + jobTitle
+                + ".",
+        "APPLICATION_WITHDRAWN"
+);
         }
 
 
@@ -351,4 +361,131 @@ public class ApplicationService {
                 .toLowerCase()
                 .replace("_", " ");
     }
+
+    // ============================================================
+// WITHDRAW APPLICATION
+// ============================================================
+
+@Transactional
+public Application withdrawApplication(
+        Long applicationId,
+        String candidateEmail) {
+
+    // --------------------------------------------------------
+    // 1. FIND APPLICATION
+    // --------------------------------------------------------
+
+    Application application =
+            applicationRepository.findById(applicationId)
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Application not found"
+                            ));
+
+
+    // --------------------------------------------------------
+    // 2. VERIFY OWNERSHIP
+    // --------------------------------------------------------
+
+    if (!candidateEmail.equalsIgnoreCase(
+            application.getCandidateEmail())) {
+
+        throw new RuntimeException(
+                "You are not allowed to withdraw this application"
+        );
+    }
+
+
+    // --------------------------------------------------------
+    // 3. CHECK CURRENT STATUS
+    // --------------------------------------------------------
+
+    ApplicationStatus currentStatus =
+            application.getStatus();
+
+
+    if (currentStatus == ApplicationStatus.WITHDRAWN) {
+
+        throw new RuntimeException(
+                "Application has already been withdrawn"
+        );
+    }
+
+
+    if (currentStatus == ApplicationStatus.SELECTED) {
+
+        throw new RuntimeException(
+                "A selected application cannot be withdrawn"
+        );
+    }
+
+
+    if (currentStatus == ApplicationStatus.REJECTED) {
+
+        throw new RuntimeException(
+                "A rejected application cannot be withdrawn"
+        );
+    }
+
+
+    // --------------------------------------------------------
+    // 4. UPDATE STATUS
+    // --------------------------------------------------------
+
+    application.setStatus(
+            ApplicationStatus.WITHDRAWN
+    );
+
+    application.setUpdatedAt(
+            LocalDateTime.now()
+    );
+
+
+    // --------------------------------------------------------
+    // 5. SAVE
+    // --------------------------------------------------------
+
+    Application updatedApplication =
+            applicationRepository.save(application);
+
+
+    // --------------------------------------------------------
+    // 6. NOTIFY CANDIDATE
+    // --------------------------------------------------------
+
+    String jobTitle =
+            application.getJob() != null &&
+            application.getJob().getTitle() != null
+                    ? application.getJob().getTitle()
+                    : "the job";
+
+
+    notificationService.createCandidateNotification(
+
+            candidateEmail,
+
+            "Application withdrawn",
+
+            "Your application for "
+                    + jobTitle
+                    + " has been successfully withdrawn.",
+
+            "APPLICATION_WITHDRAWN"
+    );
+
+
+    // --------------------------------------------------------
+    // 7. LOG
+    // --------------------------------------------------------
+
+    System.out.println(
+            "Application #"
+                    + applicationId
+                    + " withdrawn by "
+                    + candidateEmail
+    );
+
+
+    return updatedApplication;
+}
 }

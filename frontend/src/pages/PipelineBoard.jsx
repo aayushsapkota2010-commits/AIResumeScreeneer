@@ -14,7 +14,8 @@ function PipelineBoard() {
         "SHORTLISTED",
         "INTERVIEW",
         "SELECTED",
-        "REJECTED"
+        "REJECTED",
+        "WITHDRAWN"
     ];
 
 

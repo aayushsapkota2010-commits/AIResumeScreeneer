@@ -57,47 +57,87 @@ function MyApplications() {
         }
     };
 
+    const handleWithdraw = async (applicationId) => {
+    const confirmed = window.confirm(
+        "Are you sure you want to withdraw this application?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+        // Withdraw application
+        await api.put(
+            `/applications/${applicationId}/withdraw`
+        );
+
+        // Refresh applications
+        const response = await api.get(
+            "/applications/my"
+        );
+
+        setApplications(response.data || []);
+
+    } catch (error) {
+
+        console.error(
+            "Failed to withdraw application:",
+            error
+        );
+
+        alert(
+            error.response?.data ||
+            "Failed to withdraw application."
+        );
+    }
+};
+
     const getStatusClass = (status) => {
 
-        switch (status) {
+    switch (status) {
 
-            case "APPLIED":
-                return "status-applied";
+        case "APPLIED":
+            return "status-applied";
 
-            case "SCREENING":
-                return "status-screening";
+        case "SCREENING":
+            return "status-screening";
 
-            case "SHORTLISTED":
-                return "status-shortlisted";
+        case "SHORTLISTED":
+            return "status-shortlisted";
 
-            case "INTERVIEW":
-                return "status-interview";
+        case "INTERVIEW":
+            return "status-interview";
 
-            case "SELECTED":
-                return "status-selected";
+        case "SELECTED":
+            return "status-selected";
 
-            case "REJECTED":
-                return "status-rejected";
+        case "REJECTED":
+            return "status-rejected";
 
-            default:
-                return "status-applied";
-        }
-    };
+        case "WITHDRAWN":
+            return "status-withdrawn";
 
-    const getStatusIcon = (status) => {
+        default:
+            return "status-applied";
+    }
+};
 
-        switch (status) {
+   const getStatusIcon = (status) => {
 
-            case "SELECTED":
-                return <CheckCircle2 size={15} />;
+    switch (status) {
 
-            case "REJECTED":
-                return <XCircle size={15} />;
+        case "SELECTED":
+            return <CheckCircle2 size={15} />;
 
-            default:
-                return <Clock3 size={15} />;
-        }
-    };
+        case "REJECTED":
+            return <XCircle size={15} />;
+
+        case "WITHDRAWN":
+            return <XCircle size={15} />;
+
+        default:
+            return <Clock3 size={15} />;
+    }
+};
 
     const getStatusMessage = (status) => {
     switch (status) {
@@ -148,6 +188,14 @@ function MyApplications() {
                     "This application was not selected for the next stage. You can continue exploring other opportunities.",
                 className: "action-rejected"
             };
+
+            case "WITHDRAWN":
+    return {
+        title: "Application withdrawn",
+        message:
+            "You have withdrawn this application. Your application history and AI analysis have been preserved.",
+        className: "action-withdrawn"
+    };
 
         default:
             return {
@@ -214,102 +262,131 @@ function MyApplications() {
 
     const renderTimeline = (status) => {
 
-        /*
-         * Rejected applications get a separate timeline.
-         */
-        if (status === "REJECTED") {
-
-            return (
-                <div className="application-timeline rejected-timeline">
-
-                    <div className="timeline-step completed">
-                        <div className="timeline-dot">
-                            <CheckCircle2 size={13} />
-                        </div>
-                        <span>Applied</span>
-                    </div>
-
-                    <div className="timeline-line completed-line" />
-
-                    <div className="timeline-step rejected-step">
-                        <div className="timeline-dot">
-                            <XCircle size={13} />
-                        </div>
-                        <span>Rejected</span>
-                    </div>
-
-                </div>
-            );
-        }
-
-        const currentIndex =
-            getStageIndex(status);
+    /*
+     * Rejected applications get a separate timeline.
+     */
+    if (status === "REJECTED") {
 
         return (
-            <div className="application-timeline">
+            <div className="application-timeline rejected-timeline">
 
-                {stages.map((stage, index) => {
+                <div className="timeline-step completed">
+                    <div className="timeline-dot">
+                        <CheckCircle2 size={13} />
+                    </div>
+                    <span>Applied</span>
+                </div>
 
-                    const completed =
-                        currentIndex >= index;
+                <div className="timeline-line completed-line" />
 
-                    const current =
-                        currentIndex === index;
-
-                    return (
-                        <div
-                            className="timeline-wrapper"
-                            key={stage}
-                        >
-
-                            <div
-                                className={`timeline-step ${
-                                    completed
-                                        ? "completed"
-                                        : ""
-                                } ${
-                                    current
-                                        ? "current"
-                                        : ""
-                                }`}
-                            >
-
-                                <div className="timeline-dot">
-
-                                    {completed ? (
-                                        <CheckCircle2
-                                            size={13}
-                                        />
-                                    ) : (
-                                        <span />
-                                    )}
-
-                                </div>
-
-                                <span>
-                                    {formatStatus(stage)}
-                                </span>
-
-                            </div>
-
-                            {index < stages.length - 1 && (
-                                <div
-                                    className={`timeline-line ${
-                                        currentIndex >
-                                        index
-                                            ? "completed-line"
-                                            : ""
-                                    }`}
-                                />
-                            )}
-
-                        </div>
-                    );
-                })}
+                <div className="timeline-step rejected-step">
+                    <div className="timeline-dot">
+                        <XCircle size={13} />
+                    </div>
+                    <span>Rejected</span>
+                </div>
 
             </div>
         );
-    };
+    }
+
+
+    /*
+     * Withdrawn applications get a separate timeline.
+     */
+    if (status === "WITHDRAWN") {
+
+        return (
+            <div className="application-timeline withdrawn-timeline">
+
+                <div className="timeline-step completed">
+                    <div className="timeline-dot">
+                        <CheckCircle2 size={13} />
+                    </div>
+                    <span>Applied</span>
+                </div>
+
+                <div className="timeline-line completed-line" />
+
+                <div className="timeline-step withdrawn-step">
+                    <div className="timeline-dot">
+                        <XCircle size={13} />
+                    </div>
+                    <span>Withdrawn</span>
+                </div>
+
+            </div>
+        );
+    }
+
+
+    const currentIndex =
+        getStageIndex(status);
+
+    return (
+        <div className="application-timeline">
+
+            {stages.map((stage, index) => {
+
+                const completed =
+                    currentIndex >= index;
+
+                const current =
+                    currentIndex === index;
+
+                return (
+                    <div
+                        className="timeline-wrapper"
+                        key={stage}
+                    >
+
+                        <div
+                            className={`timeline-step ${
+                                completed
+                                    ? "completed"
+                                    : ""
+                            } ${
+                                current
+                                    ? "current"
+                                    : ""
+                            }`}
+                        >
+
+                            <div className="timeline-dot">
+
+                                {completed ? (
+                                    <CheckCircle2
+                                        size={13}
+                                    />
+                                ) : (
+                                    <span />
+                                )}
+
+                            </div>
+
+                            <span>
+                                {formatStatus(stage)}
+                            </span>
+
+                        </div>
+
+                        {index < stages.length - 1 && (
+                            <div
+                                className={`timeline-line ${
+                                    currentIndex > index
+                                        ? "completed-line"
+                                        : ""
+                                }`}
+                            />
+                        )}
+
+                    </div>
+                );
+            })}
+
+        </div>
+    );
+};
 
     /*
      * Score color helper
@@ -971,8 +1048,7 @@ function MyApplications() {
                                                         </div>
 
                                                     </div>
-
-                                                   {resume?.id && (
+{resume?.id && (
     <button
         onClick={() =>
             window.open(
@@ -982,6 +1058,16 @@ function MyApplications() {
         }
     >
         View Resume
+    </button>
+)}
+
+{["APPLIED", "SCREENING", "SHORTLISTED", "INTERVIEW"].includes(
+    application.status
+) && (
+    <button
+        onClick={() => handleWithdraw(application.id)}
+    >
+        Withdraw Application
     </button>
 )}
 

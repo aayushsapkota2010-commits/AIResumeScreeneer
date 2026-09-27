@@ -111,4 +111,36 @@ public ResponseEntity<?> updateStatus(
                 .body(e.getMessage());
     }
 }
+
+// ============================================================
+// USER: Withdraw application
+// ============================================================
+
+@PutMapping("/{id}/withdraw")
+public ResponseEntity<?> withdrawApplication(
+        @PathVariable Long id,
+        Principal principal) {
+
+    try {
+
+        String candidateEmail =
+                principal.getName();
+
+        Application updatedApplication =
+                applicationService.withdrawApplication(
+                        id,
+                        candidateEmail
+                );
+
+        return ResponseEntity.ok(
+                updatedApplication
+        );
+
+    } catch (RuntimeException e) {
+
+        return ResponseEntity
+                .badRequest()
+                .body(e.getMessage());
+    }
+}
 }
