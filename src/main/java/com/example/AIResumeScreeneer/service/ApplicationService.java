@@ -316,6 +316,8 @@ public class ApplicationService {
                     "APPLICATION_STATUS_CHANGE"
             );
 
+            System.out.println("🔥 ABOUT TO CREATE GLOBAL RECRUITER NOTIFICATION 🔥");
+
             notificationService.createNotification(
         "Application withdrawn",
         "Candidate "
@@ -325,6 +327,7 @@ public class ApplicationService {
                 + ".",
         "APPLICATION_WITHDRAWN"
 );
+System.out.println("🔥 GLOBAL RECRUITER NOTIFICATION CREATED 🔥");
         }
 
 
@@ -403,7 +406,6 @@ public Application withdrawApplication(
     ApplicationStatus currentStatus =
             application.getStatus();
 
-
     if (currentStatus == ApplicationStatus.WITHDRAWN) {
 
         throw new RuntimeException(
@@ -411,14 +413,12 @@ public Application withdrawApplication(
         );
     }
 
-
     if (currentStatus == ApplicationStatus.SELECTED) {
 
         throw new RuntimeException(
                 "A selected application cannot be withdrawn"
         );
     }
-
 
     if (currentStatus == ApplicationStatus.REJECTED) {
 
@@ -450,7 +450,7 @@ public Application withdrawApplication(
 
 
     // --------------------------------------------------------
-    // 6. NOTIFY CANDIDATE
+    // 6. GET JOB TITLE
     // --------------------------------------------------------
 
     String jobTitle =
@@ -460,22 +460,45 @@ public Application withdrawApplication(
                     : "the job";
 
 
+    // --------------------------------------------------------
+    // 7. NOTIFY CANDIDATE
+    // --------------------------------------------------------
+
     notificationService.createCandidateNotification(
-
             candidateEmail,
-
             "Application withdrawn",
-
             "Your application for "
                     + jobTitle
                     + " has been successfully withdrawn.",
-
             "APPLICATION_WITHDRAWN"
     );
 
 
     // --------------------------------------------------------
-    // 7. LOG
+    // 8. NOTIFY RECRUITER / ADMIN
+    // --------------------------------------------------------
+
+    System.out.println(
+            "🔥 ABOUT TO CREATE GLOBAL RECRUITER NOTIFICATION 🔥"
+    );
+
+    notificationService.createNotification(
+            "Application withdrawn",
+            "Candidate "
+                    + candidateEmail
+                    + " has withdrawn their application for "
+                    + jobTitle
+                    + ".",
+            "APPLICATION_WITHDRAWN"
+    );
+
+    System.out.println(
+            "🔥 GLOBAL RECRUITER NOTIFICATION CREATED 🔥"
+    );
+
+
+    // --------------------------------------------------------
+    // 9. LOG
     // --------------------------------------------------------
 
     System.out.println(

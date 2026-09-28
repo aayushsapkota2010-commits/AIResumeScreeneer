@@ -20,4 +20,8 @@ public interface NotificationRepository
     List<Notification> findByRecipientEmailAndReadFalseOrderByCreatedAtDesc(
             String recipientEmail
     );
+
+     List<Notification> findByRecipientEmailIsNullOrderByCreatedAtDesc();
+
+    List<Notification> findByRecipientEmailIsNullAndReadFalseOrderByCreatedAtDesc();
 }

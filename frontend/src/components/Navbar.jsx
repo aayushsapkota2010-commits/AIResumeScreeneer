@@ -39,6 +39,10 @@ function Navbar() {
     const notifRef = useRef(null);
     const profileRef = useRef(null);
 
+    // ============================================================
+    // THEME
+    // ============================================================
+
     useEffect(() => {
         document.documentElement.setAttribute(
             "data-theme",
@@ -51,22 +55,38 @@ function Navbar() {
         );
     }, [isDark]);
 
+    // ============================================================
+    // PROFILE
+    // ============================================================
+
     useEffect(() => {
         const loadNavbarProfile = async () => {
             try {
-                const response = await api.get("/user/profile");
+                const response =
+                    await api.get("/user/profile");
 
-                const fullName = response.data?.fullName;
-                const role = response.data?.role;
+                const fullName =
+                    response.data?.fullName;
+
+                const role =
+                    response.data?.role;
 
                 if (fullName) {
                     setUserName(fullName);
-                    localStorage.setItem("name", fullName);
+
+                    localStorage.setItem(
+                        "name",
+                        fullName
+                    );
                 }
 
                 if (role) {
                     setUserRole(role);
-                    localStorage.setItem("role", role);
+
+                    localStorage.setItem(
+                        "role",
+                        role
+                    );
                 }
             } catch (error) {
                 console.error(
@@ -79,18 +99,27 @@ function Navbar() {
         loadNavbarProfile();
     }, []);
 
+    // ============================================================
+    // CLOSE DROPDOWNS WHEN CLICKING OUTSIDE
+    // ============================================================
+
     useEffect(() => {
         function handleClickOutside(event) {
+
             if (
                 notifRef.current &&
-                !notifRef.current.contains(event.target)
+                !notifRef.current.contains(
+                    event.target
+                )
             ) {
                 setNotifOpen(false);
             }
 
             if (
                 profileRef.current &&
-                !profileRef.current.contains(event.target)
+                !profileRef.current.contains(
+                    event.target
+                )
             ) {
                 setProfileOpen(false);
             }
@@ -109,130 +138,433 @@ function Navbar() {
         };
     }, []);
 
-  useEffect(() => {
-    let client = null;
+    // ============================================================
+    // NOTIFICATIONS + WEBSOCKET
+    // ============================================================
 
-    const loadNotifications = async () => {
-        try {
-            const response = await api.get("/notifications");
+    useEffect(() => {
 
-            setNotifications(response.data || []);
+        let isMounted = true;
 
-        } catch (error) {
+        // --------------------------------------------------------
+        // MERGE NOTIFICATIONS
+        // --------------------------------------------------------
+
+        const mergeNotifications = (
+            current,
+            incoming
+        ) => {
+
+            const notificationMap =
+                new Map();
+
+            current.forEach(
+                (notification) => {
+
+                    if (notification.id) {
+                        notificationMap.set(
+                            notification.id,
+                            notification
+                        );
+                    }
+
+                }
+            );
+
+            incoming.forEach(
+                (notification) => {
+
+                    if (notification.id) {
+                        notificationMap.set(
+                            notification.id,
+                            notification
+                        );
+                    }
+
+                }
+            );
+
+            return Array.from(
+                notificationMap.values()
+            ).sort(
+                (a, b) =>
+                    new Date(
+                        b.createdAt || 0
+                    ) -
+                    new Date(
+                        a.createdAt || 0
+                    )
+            );
+        };
+
+        // --------------------------------------------------------
+        // LOAD EXISTING NOTIFICATIONS
+        // --------------------------------------------------------
+
+        const loadNotifications =
+            async () => {
+
+                try {
+
+                    const response =
+                        await api.get(
+                            "/notifications"
+                        );
+
+                    if (isMounted) {
+
+                        setNotifications(
+                            (previous) =>
+                                mergeNotifications(
+                                    previous,
+                                    response.data ||
+                                        []
+                                )
+                        );
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to load notifications:",
+                        error
+                    );
+
+                }
+
+            };
+
+        loadNotifications();
+
+        // --------------------------------------------------------
+        // WEBSOCKET URL
+        // --------------------------------------------------------
+
+        const apiUrl =
+            import.meta.env.VITE_API_URL;
+
+        if (!apiUrl) {
+
             console.error(
-                "Failed to load notifications:",
-                error
+                "VITE_API_URL is not configured."
             );
+
+            return () => {
+                isMounted = false;
+            };
+
         }
-    };
 
-    loadNotifications();
+        const wsUrl =
+            apiUrl
+                .replace(
+                    /^http:/,
+                    "ws:"
+                )
+                .replace(
+                    /^https:/,
+                    "wss:"
+                )
+                .replace(
+                    /\/api\/?$/,
+                    ""
+                ) + "/ws";
 
-    const apiUrl =
-        import.meta.env.VITE_API_URL;
+        // --------------------------------------------------------
+        // ROLE + EMAIL
+        // --------------------------------------------------------
 
-    if (!apiUrl) {
-        console.error(
-            "VITE_API_URL is not configured."
+        const role =
+            localStorage.getItem(
+                "role"
+            ) || "";
+
+        const email =
+            localStorage.getItem(
+                "email"
+            ) || "";
+
+        console.log(
+            "Notification WebSocket role:",
+            role
         );
-        return;
-    }
 
-    const wsUrl =
-        apiUrl
-            .replace(/^http:/, "ws:")
-            .replace(/^https:/, "wss:")
-            .replace(/\/api\/?$/, "") + "/ws";
+        console.log(
+            "Notification WebSocket email:",
+            email
+        );
 
-    console.log(
-        "Notification WebSocket URL:",
-        wsUrl
-    );
+        // --------------------------------------------------------
+        // HANDLE LIVE NOTIFICATION
+        // --------------------------------------------------------
 
-    client = new Client({
-        brokerURL: wsUrl,
+        const handleNotification =
+            (message) => {
 
-        reconnectDelay: 5000,
+                try {
 
-        onConnect: () => {
-            console.log(
-                "Notification WebSocket connected"
-            );
+                    const notification =
+                        JSON.parse(
+                            message.body
+                        );
 
-            client.subscribe(
-                "/topic/notifications",
-                (message) => {
-                    try {
-                        const notification =
-                            JSON.parse(message.body);
+                    console.log(
+                        "================================"
+                    );
 
-                        console.log(
-                            "New notification received:",
+                    console.log(
+                        "LIVE NOTIFICATION RECEIVED"
+                    );
+
+                    console.log(
+                        "Notification:",
+                        notification
+                    );
+
+                    console.log(
+                        "Notification ID:",
+                        notification.id
+                    );
+
+                    console.log(
+                        "Notification title:",
+                        notification.title
+                    );
+
+                    console.log(
+                        "Notification read:",
+                        notification.read
+                    );
+
+                    console.log(
+                        "================================"
+                    );
+
+                    if (
+                        !notification.id
+                    ) {
+
+                        console.warn(
+                            "Received notification without ID:",
                             notification
                         );
 
-                        setNotifications(
-                            (previous) => [
+                        return;
+                    }
+
+                    if (!isMounted) {
+                        return;
+                    }
+
+                    setNotifications(
+                        (previous) => {
+
+                            console.log(
+                                "Previous notifications:",
+                                previous
+                            );
+
+                            const exists =
+                                previous.some(
+                                    (item) =>
+                                        item.id ===
+                                        notification.id
+                                );
+
+                            if (exists) {
+
+                                console.log(
+                                    "Notification already exists:",
+                                    notification.id
+                                );
+
+                                return previous;
+                            }
+
+                            const updated = [
                                 notification,
                                 ...previous
-                            ]
+                            ];
+
+                            console.log(
+                                "UPDATED NOTIFICATIONS:",
+                                updated
+                            );
+
+                            return updated;
+                        }
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to parse notification:",
+                        error
+                    );
+
+                }
+
+            };
+
+        // --------------------------------------------------------
+        // STOMP CLIENT
+        // --------------------------------------------------------
+
+        const client =
+            new Client({
+
+                brokerURL: wsUrl,
+
+                reconnectDelay: 5000,
+
+                onConnect: () => {
+
+                    console.log(
+                        "================================"
+                    );
+
+                    console.log(
+                        "Notification WebSocket connected"
+                    );
+
+                    console.log(
+                        "Role:",
+                        role
+                    );
+
+                    console.log(
+                        "Email:",
+                        email
+                    );
+
+                    console.log(
+                        "================================"
+                    );
+
+                    // ------------------------------------------------
+                    // ADMIN / RECRUITER
+                    // ------------------------------------------------
+
+                    if (
+                        role === "ADMIN"
+                    ) {
+
+                        console.log(
+                            "Subscribing to recruiter notifications..."
                         );
 
-                    } catch (error) {
+                        client.subscribe(
+                            "/topic/notifications",
+                            handleNotification
+                        );
+
+                    }
+
+                    // ------------------------------------------------
+                    // CANDIDATE / USER
+                    // ------------------------------------------------
+
+                    if (
+                        role === "USER" &&
+                        email
+                    ) {
+
+                        const candidateTopic =
+                            `/topic/notifications/candidate/${email}`;
+
+                        console.log(
+                            "Subscribing to candidate topic:",
+                            candidateTopic
+                        );
+
+                        client.subscribe(
+                            candidateTopic,
+                            handleNotification
+                        );
+
+                    }
+
+                },
+
+                onStompError:
+                    (frame) => {
+
                         console.error(
-                            "Failed to parse notification:",
+                            "WebSocket STOMP error:",
+                            frame
+                        );
+
+                    },
+
+                onWebSocketError:
+                    (error) => {
+
+                        console.error(
+                            "WebSocket error:",
                             error
                         );
+
                     }
-                }
-            );
-        },
 
-        onStompError: (frame) => {
-            console.error(
-                "WebSocket STOMP error:",
-                frame
-            );
-        },
+            });
 
-        onWebSocketError: (error) => {
-            console.error(
-                "WebSocket error:",
-                error
-            );
-        }
-    });
+        client.activate();
 
-    client.activate();
+        // --------------------------------------------------------
+        // CLEANUP
+        // --------------------------------------------------------
 
-    return () => {
-        if (client) {
+        return () => {
+
+            isMounted = false;
+
             client.deactivate();
-        }
-    };
 
-}, []);
+        };
+
+    }, []);
+
+    // ============================================================
+    // UNREAD COUNT
+    // ============================================================
+
     const unreadCount =
         notifications.filter(
             (notification) =>
                 !notification.read
         ).length;
 
+    // ============================================================
+    // INITIALS
+    // ============================================================
+
     const initials = userName
         ? userName
               .split(" ")
               .filter(Boolean)
               .slice(0, 2)
-              .map((word) => word[0])
+              .map(
+                  (word) =>
+                      word[0]
+              )
               .join("")
               .toUpperCase()
         : "U";
 
+    // ============================================================
+    // SEARCH
+    // ============================================================
+
     const handleSearch = () => {
-        const searchValue = query.trim();
+
+        const searchValue =
+            query.trim();
 
         if (!searchValue) {
+
             navigate("/search");
+
             return;
         }
 
@@ -241,68 +573,125 @@ function Navbar() {
                 searchValue
             )}`
         );
+
     };
 
-    const handleSearchKeyDown = (event) => {
-        if (event.key === "Enter") {
-            handleSearch();
-        }
-    };
+    const handleSearchKeyDown =
+        (event) => {
+
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
+                handleSearch();
+
+            }
+
+        };
+
+    // ============================================================
+    // PROFILE
+    // ============================================================
 
     const handleMyProfile = () => {
+
         setProfileOpen(false);
+
         navigate("/profile");
+
     };
 
     const handleAccountSettings = () => {
+
         setProfileOpen(false);
+
         navigate("/settings");
+
     };
+
+    // ============================================================
+    // LOGOUT
+    // ============================================================
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("name");
-        localStorage.removeItem("email");
+
+        localStorage.removeItem(
+            "token"
+        );
+
+        localStorage.removeItem(
+            "role"
+        );
+
+        localStorage.removeItem(
+            "name"
+        );
+
+        localStorage.removeItem(
+            "email"
+        );
 
         setProfileOpen(false);
+
         setNotifOpen(false);
 
-        navigate("/login", {
-            replace: true
-        });
+        navigate(
+            "/login",
+            {
+                replace: true
+            }
+        );
+
     };
 
-    const handleMarkAllRead = async () => {
-        try {
-            await api.put(
-                "/notifications/read-all"
-            );
+    // ============================================================
+    // MARK ALL READ
+    // ============================================================
 
-            setNotifications(
-                (previous) =>
-                    previous.map(
-                        (notification) => ({
-                            ...notification,
-                            read: true
-                        })
-                    )
-            );
-        } catch (error) {
-            console.error(
-                "Failed to mark notifications as read:",
-                error
-            );
-        }
-    };
+    const handleMarkAllRead =
+        async () => {
+
+            try {
+
+                await api.put(
+                    "/notifications/read-all"
+                );
+
+                setNotifications(
+                    (previous) =>
+                        previous.map(
+                            (notification) => ({
+                                ...notification,
+                                read: true
+                            })
+                        )
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to mark notifications as read:",
+                    error
+                );
+
+            }
+
+        };
+
+    // ============================================================
+    // UI
+    // ============================================================
 
     return (
         <header className="navbar">
 
             <div className="navbar-left">
+
                 <h1 className="navbar-title">
                     Dashboard
                 </h1>
+
             </div>
 
             <div className="navbar-search">
@@ -313,10 +702,12 @@ function Navbar() {
                     onClick={handleSearch}
                     aria-label="Search"
                 >
+
                     <Search
                         size={17}
                         className="navbar-search-icon"
                     />
+
                 </button>
 
                 <input
@@ -324,9 +715,13 @@ function Navbar() {
                     placeholder="Search resumes..."
                     value={query}
                     onChange={(event) =>
-                        setQuery(event.target.value)
+                        setQuery(
+                            event.target.value
+                        )
                     }
-                    onKeyDown={handleSearchKeyDown}
+                    onKeyDown={
+                        handleSearchKeyDown
+                    }
                 />
 
                 <kbd className="navbar-search-kbd">
@@ -337,41 +732,61 @@ function Navbar() {
 
             <div className="navbar-right">
 
+                {/* ==================================================
+                    NOTIFICATIONS
+                ================================================== */}
+
                 <div
                     className="navbar-popover"
                     ref={notifRef}
                 >
+
                     <button
                         type="button"
                         className="navbar-icon-btn"
                         aria-label="Notifications"
                         onClick={() => {
+
                             setNotifOpen(
-                                (prev) => !prev
+                                (prev) =>
+                                    !prev
                             );
-                            setProfileOpen(false);
+
+                            setProfileOpen(
+                                false
+                            );
+
                         }}
                     >
+
                         <Bell size={18} />
 
                         {unreadCount > 0 && (
                             <span className="navbar-badge">
-                                {unreadCount > 9
+
+                                {unreadCount >
+                                9
                                     ? "9+"
                                     : unreadCount}
+
                             </span>
                         )}
+
                     </button>
 
                     {notifOpen && (
+
                         <div className="navbar-dropdown navbar-dropdown--notif">
 
                             <div className="navbar-dropdown-header">
+
                                 <span>
                                     Notifications
                                 </span>
 
-                                {unreadCount > 0 && (
+                                {unreadCount >
+                                    0 && (
+
                                     <button
                                         type="button"
                                         className="navbar-link-btn"
@@ -381,18 +796,27 @@ function Navbar() {
                                     >
                                         Mark all read
                                     </button>
+
                                 )}
+
                             </div>
 
                             <div className="navbar-notif-list">
 
-                                {notifications.length === 0 ? (
+                                {notifications.length ===
+                                0 ? (
+
                                     <div className="navbar-notif-empty">
                                         No notifications
                                     </div>
+
                                 ) : (
+
                                     notifications.map(
-                                        (notification) => (
+                                        (
+                                            notification
+                                        ) => (
+
                                             <div
                                                 className={`navbar-notif-item ${
                                                     notification.read
@@ -411,20 +835,25 @@ function Navbar() {
                                                 <div className="navbar-notif-body">
 
                                                     <p className="navbar-notif-title">
+
                                                         {
                                                             notification.title
                                                         }
+
                                                     </p>
 
                                                     <p className="navbar-notif-detail">
+
                                                         {
                                                             notification.detail
                                                         }
+
                                                     </p>
 
                                                 </div>
 
                                                 <span className="navbar-notif-time">
+
                                                     {notification.createdAt
                                                         ? new Date(
                                                               notification.createdAt
@@ -436,18 +865,27 @@ function Navbar() {
                                                               }
                                                           )
                                                         : ""}
+
                                                 </span>
 
                                             </div>
+
                                         )
                                     )
+
                                 )}
 
                             </div>
 
                         </div>
+
                     )}
+
                 </div>
+
+                {/* ==================================================
+                    THEME
+                ================================================== */}
 
                 <button
                     type="button"
@@ -459,18 +897,25 @@ function Navbar() {
                     }
                     onClick={() =>
                         setIsDark(
-                            (prev) => !prev
+                            (prev) =>
+                                !prev
                         )
                     }
                 >
+
                     {isDark ? (
                         <Sun size={18} />
                     ) : (
                         <Moon size={18} />
                     )}
+
                 </button>
 
                 <div className="navbar-divider" />
+
+                {/* ==================================================
+                    PROFILE
+                ================================================== */}
 
                 <div
                     className="navbar-popover"
@@ -481,18 +926,30 @@ function Navbar() {
                         type="button"
                         className="navbar-profile-btn"
                         onClick={() => {
+
                             setProfileOpen(
-                                (prev) => !prev
+                                (prev) =>
+                                    !prev
                             );
-                            setNotifOpen(false);
+
+                            setNotifOpen(
+                                false
+                            );
+
                         }}
                     >
+
                         <span className="navbar-avatar">
+
                             {initials}
+
                         </span>
 
                         <span className="navbar-profile-name">
-                            {userName || "User"}
+
+                            {userName ||
+                                "User"}
+
                         </span>
 
                         <ChevronDown
@@ -503,25 +960,37 @@ function Navbar() {
                                     : ""
                             }`}
                         />
+
                     </button>
 
                     {profileOpen && (
+
                         <div className="navbar-dropdown navbar-dropdown--profile">
 
                             <div className="navbar-dropdown-profile-head">
 
                                 <span className="navbar-avatar navbar-avatar--lg">
+
                                     {initials}
+
                                 </span>
 
                                 <div>
+
                                     <p className="navbar-profile-fullname">
-                                        {userName || "User"}
+
+                                        {userName ||
+                                            "User"}
+
                                     </p>
 
                                     <p className="navbar-profile-role">
-                                        {userRole || "User"}
+
+                                        {userRole ||
+                                            "User"}
+
                                     </p>
+
                                 </div>
 
                             </div>
@@ -535,10 +1004,13 @@ function Navbar() {
                                     handleMyProfile
                                 }
                             >
+
                                 <User size={15} />
+
                                 <span>
                                     My Profile
                                 </span>
+
                             </button>
 
                             <button
@@ -548,10 +1020,15 @@ function Navbar() {
                                     handleAccountSettings
                                 }
                             >
-                                <SettingsIcon size={15} />
+
+                                <SettingsIcon
+                                    size={15}
+                                />
+
                                 <span>
                                     Account Settings
                                 </span>
+
                             </button>
 
                             <div className="navbar-dropdown-divider" />
@@ -559,15 +1036,23 @@ function Navbar() {
                             <button
                                 type="button"
                                 className="navbar-dropdown-item navbar-dropdown-item--danger"
-                                onClick={handleLogout}
+                                onClick={
+                                    handleLogout
+                                }
                             >
-                                <LogOut size={15} />
+
+                                <LogOut
+                                    size={15}
+                                />
+
                                 <span>
                                     Log out
                                 </span>
+
                             </button>
 
                         </div>
+
                     )}
 
                 </div>

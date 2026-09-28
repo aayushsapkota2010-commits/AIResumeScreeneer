@@ -64,7 +64,8 @@ function Login() {
             }
 
             localStorage.setItem("token", token);
-            localStorage.setItem("role", role);
+localStorage.setItem("role", role);
+localStorage.setItem("email", email.trim());
 
             if (role === "ADMIN") {
 

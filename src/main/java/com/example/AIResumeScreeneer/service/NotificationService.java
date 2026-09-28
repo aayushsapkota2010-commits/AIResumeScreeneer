@@ -36,6 +36,7 @@ public class NotificationService {
         System.out.println("Title: " + title);
         System.out.println("Detail: " + detail);
         System.out.println("Type: " + type);
+        
 
         Notification notification =
                 Notification.builder()
@@ -54,7 +55,13 @@ public class NotificationService {
                 "Notification ID: "
                         + saved.getId()
         );
+        
+        System.out.println("SENDING GLOBAL WEBSOCKET NOTIFICATION TO: /topic/notifications");
 
+messagingTemplate.convertAndSend(
+        "/topic/notifications",
+        saved
+);
         // Send to admin/recruiter real-time channel
         messagingTemplate.convertAndSend(
                 "/topic/notifications",
@@ -123,11 +130,10 @@ public class NotificationService {
     // Used mainly by ADMIN
     // ============================================================
 
-    public List<Notification> getAllNotifications() {
-
-        return notificationRepository
-                .findAllByOrderByCreatedAtDesc();
-    }
+   public List<Notification> getAllNotifications() {
+    return notificationRepository
+            .findByRecipientEmailIsNullOrderByCreatedAtDesc();
+}
 
 
     // ============================================================
@@ -149,10 +155,9 @@ public class NotificationService {
     // ============================================================
 
     public List<Notification> getUnreadNotifications() {
-
-        return notificationRepository
-                .findByReadFalseOrderByCreatedAtDesc();
-    }
+    return notificationRepository
+            .findByRecipientEmailIsNullAndReadFalseOrderByCreatedAtDesc();
+}
 
 
     // ============================================================
@@ -175,19 +180,16 @@ public class NotificationService {
 
     public void markAllAsRead() {
 
-        List<Notification> notifications =
-                notificationRepository
-                        .findByReadFalseOrderByCreatedAtDesc();
+    List<Notification> notifications =
+            notificationRepository
+                    .findByRecipientEmailIsNullAndReadFalseOrderByCreatedAtDesc();
 
-        for (Notification notification : notifications) {
-
-            notification.setRead(true);
-        }
-
-        notificationRepository.saveAll(
-                notifications
-        );
+    for (Notification notification : notifications) {
+        notification.setRead(true);
     }
+
+    notificationRepository.saveAll(notifications);
+}
 
 
     // ============================================================
