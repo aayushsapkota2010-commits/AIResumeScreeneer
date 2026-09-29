@@ -50,6 +50,7 @@ function CandidateManagement() {
     const [sortBy, setSortBy] = useState("recent");
     const [filterOpen, setFilterOpen] = useState(false);
     const [selectedCandidate, setSelectedCandidate] = useState(null);
+    const [stageCandidate, setStageCandidate] = useState(null);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [interviewModalOpen, setInterviewModalOpen] = useState(false);
@@ -227,8 +228,9 @@ const handleInterviewInvite = (candidate) => {
 
    const handleMoveStage = (candidate) => {
 
-    setSelectedCandidate(candidate);
+    console.log("MOVE STAGE CANDIDATE:", candidate);
 
+    setStageCandidate(candidate);
     setModalOpen(true);
 
 };
@@ -466,9 +468,12 @@ const handleInterviewInvite = (candidate) => {
 
     isOpen={modalOpen}
 
-    onClose={() => setModalOpen(false)}
+    onClose={() => {
+        setModalOpen(false);
+        setStageCandidate(null);
+    }}
 
-candidate={selectedCandidate}
+    candidate={stageCandidate}
     onSuccess={() => {
 
         api.get("/resume/all")

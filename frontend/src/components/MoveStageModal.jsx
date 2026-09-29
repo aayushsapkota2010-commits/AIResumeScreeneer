@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "react-modal";
 import api from "../api/api";
 
@@ -11,36 +11,67 @@ function MoveStageModal({
     onSuccess
 }) {
 
-    const [status, setStatus] = useState(
-        candidate?.status || "APPLIED"
-    );
+    const [status, setStatus] = useState("APPLIED");
+    const [saving, setSaving] = useState(false);
+
+    // Sync status whenever a different candidate is opened
+    useEffect(() => {
+
+        if (candidate) {
+            setStatus(
+                candidate.status || "APPLIED"
+            );
+        }
+
+    }, [candidate]);
 
     const saveStatus = async () => {
 
+        // Safety check
+        if (!candidate?.id) {
+
+            console.error(
+                "Cannot move stage: candidate is null or has no ID",
+                candidate
+            );
+
+            return;
+        }
+
         try {
 
+            setSaving(true);
+
+            console.log(
+                "Moving candidate:",
+                candidate.id,
+                "to:",
+                status
+            );
+
             await api.put(
-
                 `/resume/status/${candidate.id}`,
-
                 {
                     status: status
                 }
-
             );
 
             onSuccess();
 
             onClose();
 
+        } catch (error) {
+
+            console.error(
+                "Failed to update candidate status:",
+                error
+            );
+
+        } finally {
+
+            setSaving(false);
+
         }
-
-        catch(error){
-
-            console.log(error);
-
-        }
-
     };
 
     return (
@@ -53,11 +84,11 @@ function MoveStageModal({
 
             style={{
 
-                content:{
-                    width:"450px",
-                    height:"300px",
-                    margin:"auto",
-                    borderRadius:"15px"
+                content: {
+                    width: "450px",
+                    height: "300px",
+                    margin: "auto",
+                    borderRadius: "15px"
                 }
 
             }}
@@ -66,67 +97,103 @@ function MoveStageModal({
 
             <h2>Move Candidate</h2>
 
-            <br/>
+            <br />
 
-            <select
+            {!candidate ? (
 
-                value={status}
+                <p>
+                    No candidate selected.
+                </p>
 
-                onChange={(e)=>setStatus(e.target.value)}
+            ) : (
 
-                style={{
+                <>
+                    <p>
+                        Moving:
+                        <strong>
+                            {" "}
+                            {candidate.name ||
+                                candidate.email ||
+                                "Candidate"}
+                        </strong>
+                    </p>
 
-                    width:"100%",
-                    padding:"12px"
+                    <br />
 
-                }}
+                    <select
 
-            >
+                        value={status}
 
-                <option value="APPLIED">
-                    Applied
-                </option>
+                        onChange={(e) =>
+                            setStatus(e.target.value)
+                        }
 
-                <option value="SHORTLISTED">
-                    Shortlisted
-                </option>
+                        disabled={saving}
 
-                <option value="INTERVIEW">
-                    Interview
-                </option>
+                        style={{
+                            width: "100%",
+                            padding: "12px"
+                        }}
 
-                <option value="SELECTED">
-                    Selected
-                </option>
+                    >
 
-                <option value="REJECTED">
-                    Rejected
-                </option>
+                        <option value="APPLIED">
+                            Applied
+                        </option>
 
-            </select>
+                        <option value="SHORTLISTED">
+                            Shortlisted
+                        </option>
 
-            <br/>
-            <br/>
+                        <option value="INTERVIEW">
+                            Interview
+                        </option>
 
-            <button onClick={saveStatus}>
+                        <option value="SELECTED">
+                            Selected
+                        </option>
 
-                Save
+                        <option value="REJECTED">
+                            Rejected
+                        </option>
 
-            </button>
+                    </select>
 
-            <button
-                onClick={onClose}
-                style={{marginLeft:"15px"}}
-            >
+                    <br />
+                    <br />
 
-                Cancel
+                    <button
+                        onClick={saveStatus}
+                        disabled={saving}
+                    >
 
-            </button>
+                        {saving
+                            ? "Saving..."
+                            : "Save"}
+
+                    </button>
+
+                    <button
+
+                        onClick={onClose}
+
+                        disabled={saving}
+
+                        style={{
+                            marginLeft: "15px"
+                        }}
+
+                    >
+
+                        Cancel
+
+                    </button>
+                </>
+
+            )}
 
         </Modal>
-
     );
-
 }
 
 export default MoveStageModal;
