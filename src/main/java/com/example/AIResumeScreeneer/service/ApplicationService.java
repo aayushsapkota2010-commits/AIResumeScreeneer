@@ -280,6 +280,35 @@ public class ApplicationService {
         Application updatedApplication =
                 applicationRepository.save(application);
 
+                // Sync Application status → Resume status
+if (application.getResume() != null) {
+
+    try {
+
+        com.example.AIResumeScreeneer.entity.CandidateStatus resumeStatus =
+                com.example.AIResumeScreeneer.entity.CandidateStatus.valueOf(
+                        newStatus.name()
+                );
+
+        application.getResume().setStatus(resumeStatus);
+
+        resumeRepository.save(application.getResume());
+
+        System.out.println(
+                "✅ Resume status synced: "
+                        + resumeStatus
+        );
+
+    } catch (IllegalArgumentException e) {
+
+        System.out.println(
+                "⚠️ Application status "
+                        + newStatus
+                        + " has no matching CandidateStatus"
+        );
+    }
+}
+
 
         // --------------------------------------------------------
         // 6. CANDIDATE NOTIFICATION
@@ -348,6 +377,45 @@ System.out.println("🔥 GLOBAL RECRUITER NOTIFICATION CREATED 🔥");
         return updatedApplication;
     }
 
+
+    // ============================================================
+// SYNC APPLICATION STATUS USING RESUME ID
+// USED BY RECRUITER MOVE STAGE
+// ============================================================
+
+@Transactional
+public Application updateStatusByResumeId(
+        Long resumeId,
+        ApplicationStatus newStatus) {
+
+    Application application =
+            applicationRepository
+                    .findFirstByResumeIdOrderByAppliedAtDesc(
+                            resumeId
+                    );
+
+    if (application == null) {
+        throw new RuntimeException(
+                "No application found for this resume"
+        );
+    }
+
+    ApplicationStatus oldStatus =
+            application.getStatus();
+
+    // Already at requested stage
+    if (oldStatus == newStatus) {
+        return application;
+    }
+
+    application.setStatus(newStatus);
+
+    application.setUpdatedAt(
+            LocalDateTime.now()
+    );
+
+    return applicationRepository.save(application);
+}
 
     // ============================================================
     // FORMAT STATUS

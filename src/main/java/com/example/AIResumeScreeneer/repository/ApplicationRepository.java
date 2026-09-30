@@ -27,4 +27,6 @@ public interface ApplicationRepository
     // NEW
     List<Application>
     findAllByOrderByAppliedAtDesc();
+
+    Application findFirstByResumeIdOrderByAppliedAtDesc(Long resumeId);
 }

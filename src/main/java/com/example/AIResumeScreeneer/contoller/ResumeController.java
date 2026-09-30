@@ -80,6 +80,9 @@ import java.nio.file.Paths;
 import java.security.Principal;
 import org.springframework.core.io.Resource;
 
+import com.example.AIResumeScreeneer.entity.ApplicationStatus;
+import com.example.AIResumeScreeneer.service.ApplicationService;
+
 
 
 @RestController
@@ -88,6 +91,7 @@ import org.springframework.core.io.Resource;
 public class ResumeController {
 
     private final ResumeService resumeService;
+    private final ApplicationService applicationService;
     private final ResumeRepository resumeRepository;
     private final ResumeAnalysisService resumeAnalysisService;
     private final JobMatchingService jobMatchingService;
@@ -368,6 +372,39 @@ public Resume updateStatus(
 
     Resume updatedResume =
             resumeRepository.save(resume);
+
+            // ============================================================
+// ALSO UPDATE LINKED APPLICATION STATUS
+// SO PIPELINE BOARD STAYS IN SYNC
+// ============================================================
+
+ApplicationStatus applicationStatus;
+
+try {
+
+    applicationStatus =
+            ApplicationStatus.valueOf(
+                    status.name()
+            );
+
+    applicationService.updateStatusByResumeId(
+            resume.getId(),
+            applicationStatus
+    );
+
+    System.out.println(
+            "✅ Application status synced: "
+                    + applicationStatus
+    );
+
+} catch (IllegalArgumentException e) {
+
+    System.out.println(
+            "⚠️ Resume status "
+                    + status
+                    + " does not exist in ApplicationStatus"
+    );
+}
 
     activityLogService.saveLog(
             "aayush@gmail.com",
