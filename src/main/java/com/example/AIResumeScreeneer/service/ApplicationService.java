@@ -344,19 +344,7 @@ if (application.getResume() != null) {
 
                     "APPLICATION_STATUS_CHANGE"
             );
-
-            System.out.println("🔥 ABOUT TO CREATE GLOBAL RECRUITER NOTIFICATION 🔥");
-
-            notificationService.createNotification(
-        "Application withdrawn",
-        "Candidate "
-                + candidateEmail
-                + " has withdrawn their application for "
-                + jobTitle
-                + ".",
-        "APPLICATION_WITHDRAWN"
-);
-System.out.println("🔥 GLOBAL RECRUITER NOTIFICATION CREATED 🔥");
+       
         }
 
 
@@ -400,21 +388,10 @@ public Application updateStatusByResumeId(
         );
     }
 
-    ApplicationStatus oldStatus =
-            application.getStatus();
-
-    // Already at requested stage
-    if (oldStatus == newStatus) {
-        return application;
-    }
-
-    application.setStatus(newStatus);
-
-    application.setUpdatedAt(
-            LocalDateTime.now()
+    return updateStatus(
+            application.getId(),
+            newStatus
     );
-
-    return applicationRepository.save(application);
 }
 
     // ============================================================

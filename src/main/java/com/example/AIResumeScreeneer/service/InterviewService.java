@@ -18,52 +18,124 @@ public class InterviewService {
 
     private final InterviewRepository interviewRepository;
     private final ResumeRepository resumeRepository;
-    private final EmailService emailService;
-
+private final EmailService emailService;
+private final NotificationService notificationService;
     // Schedule Interview
     public Interview scheduleInterview(
-            Long resumeId,
-            Interview interview
-    ) {
+        Long resumeId,
+        Interview interview
+) {
 
-        Resume resume = resumeRepository
-                .findById(resumeId)
-                .orElseThrow(() ->
-                        new RuntimeException("Resume not found"));
+    Resume resume = resumeRepository
+            .findById(resumeId)
+            .orElseThrow(() ->
+                    new RuntimeException("Resume not found"));
 
-        interview.setResume(resume);
+    interview.setResume(resume);
 
-        interview.setStatus(InterviewStatus.SCHEDULED);
+    interview.setStatus(
+            InterviewStatus.SCHEDULED
+    );
 
-        // Automatically move candidate to Interview stage
-        resume.setStatus(CandidateStatus.INTERVIEW);
+    // Automatically move candidate to Interview stage
+    resume.setStatus(
+            CandidateStatus.INTERVIEW
+    );
 
-        resumeRepository.save(resume);
+    resumeRepository.save(resume);
 
-        Interview savedInterview = interviewRepository.save(interview);
+    // Save interview first
+    Interview savedInterview =
+            interviewRepository.save(interview);
 
-emailService.sendInterviewInvitation(
 
-        resume.getCandidateEmail(),
+    // ============================================================
+    // SEND INTERVIEW EMAIL
+    // ============================================================
 
-        resume.getCandidateEmail().split("@")[0],
+    emailService.sendInterviewInvitation(
+            resume.getCandidateEmail(),
+            resume.getCandidateEmail().split("@")[0],
+            interview.getInterviewer(),
+            interview.getInterviewDate().toString(),
+            interview.getInterviewTime().toString(),
+            interview.getMode(),
+            interview.getMeetingLink(),
+            interview.getLocation()
+    );
 
-        interview.getInterviewer(),
 
-        interview.getInterviewDate().toString(),
+    // ============================================================
+    // FRONTEND NOTIFICATION → CANDIDATE
+    // ============================================================
 
-        interview.getInterviewTime().toString(),
+    if (resume.getCandidateEmail() != null
+            && !resume.getCandidateEmail().isBlank()) {
 
-        interview.getMode(),
+        String candidateEmail =
+                resume.getCandidateEmail();
 
-        interview.getMeetingLink(),
+        String interviewer =
+                interview.getInterviewer() != null
+                        ? interview.getInterviewer()
+                        : "Recruiter";
 
-        interview.getLocation()
+        String date =
+                interview.getInterviewDate() != null
+                        ? interview.getInterviewDate().toString()
+                        : "the scheduled date";
 
-);
+        String time =
+                interview.getInterviewTime() != null
+                        ? interview.getInterviewTime().toString()
+                        : "the scheduled time";
 
-return savedInterview;
+
+        notificationService.createCandidateNotification(
+                candidateEmail,
+
+                "Interview scheduled",
+
+                "Your interview has been scheduled for "
+                        + date
+                        + " at "
+                        + time
+                        + " with "
+                        + interviewer
+                        + ".",
+
+                "INTERVIEW_SCHEDULED"
+        );
+
+
+        // ========================================================
+        // FRONTEND NOTIFICATION → RECRUITER / ADMIN
+        // ========================================================
+
+        notificationService.createNotification(
+
+                "Interview scheduled",
+
+                "An interview has been scheduled with candidate "
+                        + candidateEmail
+                        + " for "
+                        + date
+                        + " at "
+                        + time
+                        + ".",
+
+                "INTERVIEW_SCHEDULED"
+        );
+
+        System.out.println(
+                "✅ Interview notifications created for "
+                        + candidateEmail
+        );
     }
+
+
+    return savedInterview;
+}
 
     // Get interview for one candidate
     public Interview getInterview(Long resumeId) {
