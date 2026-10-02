@@ -1,194 +1,743 @@
-.interview-page{
+/* =========================================================
+   INTERVIEW DASHBOARD
+   ========================================================= */
 
-padding:30px;
+.interview-page {
+    padding: 30px 36px 50px;
+    background: #f8fafc;
+    min-height: calc(100vh - 70px);
+    color: #172033;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.interview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.interview-header h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.6px;
+    color: #172033;
+}
+
+.interview-header p {
+    margin: 7px 0 0;
+    color: #71809a;
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   SUMMARY CARDS
+   ========================================================= */
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.summary-card {
+    background: #ffffff;
+    padding: 23px 25px;
+    border-radius: 16px;
+    border: 1px solid #e8ebf2;
+    box-shadow: 0 7px 22px rgba(20, 30, 55, 0.05);
+    text-align: center;
+    transition: transform 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(20, 30, 55, 0.08);
+}
+
+.summary-number {
+    font-size: 36px;
+    line-height: 1;
+    font-weight: 750;
+    color: #5146e5;
+}
+
+.summary-card p {
+    margin: 10px 0 0;
+    color: #68758d;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   CALENDAR AREA
+   ========================================================= */
+
+.calendar-section {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+    align-items: stretch;
+}
+
+
+/* =========================================================
+   CALENDAR CARD
+   ========================================================= */
+
+.calendar-card {
+    background: #ffffff;
+    border: 1px solid #e8ebf2;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 7px 22px rgba(20, 30, 55, 0.05);
+}
+
+
+/* React Calendar */
+
+.calendar-card .react-calendar {
+    width: 100%;
+    max-width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+}
+
+
+/* Month navigation */
+
+.calendar-card .react-calendar__navigation {
+    margin-bottom: 10px;
+    height: 48px;
+}
+
+.calendar-card .react-calendar__navigation button {
+    min-width: 40px;
+    border-radius: 9px;
+    background: transparent;
+    color: #344054;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.calendar-card .react-calendar__navigation button:hover {
+    background: #f1f3ff;
+}
+
+
+/* Weekday headings */
+
+.calendar-card .react-calendar__month-view__weekdays {
+    margin-bottom: 6px;
+}
+
+.calendar-card .react-calendar__month-view__weekdays__weekday {
+    padding: 8px 4px;
+    color: #7b879c;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.calendar-card .react-calendar__month-view__weekdays__weekday abbr {
+    text-decoration: none;
+}
+
+
+/* Calendar day tiles */
+
+.calendar-card .react-calendar__tile {
+    position: relative;
+    height: 45px;
+    padding: 9px 5px;
+    border-radius: 10px;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s ease,
+                color 0.15s ease;
+}
+
+.calendar-card .react-calendar__tile:hover {
+    background: #eef0ff;
+}
+
+
+/* Today */
+
+.calendar-card .react-calendar__tile--now {
+    background: #fff7cc;
+    color: #5146e5;
+    font-weight: 700;
+}
+
+
+/* Selected date */
+
+.calendar-card .react-calendar__tile--active {
+    background: #5146e5 !important;
+    color: #ffffff !important;
+    font-weight: 700;
+}
+
+.calendar-card .react-calendar__tile--active:hover {
+    background: #4338ca !important;
+}
+
+
+/* Previous / next month */
+
+.calendar-card
+.react-calendar__month-view__days__day--neighboringMonth {
+    color: #b7becb;
+}
+
+
+/* Interview indicator */
+
+.interview-dot {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #5146e5;
+    font-size: 18px;
+    line-height: 10px;
+}
+
+.calendar-card
+.react-calendar__tile--active
+.interview-dot {
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   SELECTED DATE / EVENTS
+   ========================================================= */
+
+.calendar-events {
+    min-width: 0;
+    background: #ffffff;
+    border: 1px solid #e8ebf2;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 7px 22px rgba(20, 30, 55, 0.05);
+}
+
+.calendar-events-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #edf0f5;
+    margin-bottom: 18px;
+}
+
+.calendar-events-header h2 {
+    margin: 0;
+    color: #172033;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.calendar-events-header p {
+    margin: 5px 0 0;
+    color: #7a879c;
+    font-size: 14px;
+}
+
+.event-count {
+    background: #eef0ff;
+    color: #5146e5;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   EVENT LIST
+   ========================================================= */
+
+.event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+
+/* =========================================================
+   EVENT CARD
+   ========================================================= */
+
+.event-card {
+    background: #fbfcff;
+    border: 1px solid #e8ebf2;
+    border-radius: 14px;
+    padding: 17px;
+    transition: box-shadow 0.2s ease,
+                transform 0.2s ease;
+}
+
+.event-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(20, 30, 55, 0.07);
+}
+
+.event-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.event-card h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #202a3d;
+}
+
+.event-email {
+    margin: 5px 0 0;
+    color: #7a879c;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   EVENT DETAILS
+   ========================================================= */
+
+.event-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.event-detail {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px;
+    background: #ffffff;
+    border: 1px solid #edf0f5;
+    border-radius: 10px;
+}
+
+.event-detail > span {
+    font-size: 16px;
+}
+
+.event-detail small {
+    display: block;
+    color: #8994a7;
+    font-size: 10px;
+    margin-bottom: 3px;
+}
+
+.event-detail strong {
+    display: block;
+    color: #273247;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+
+/* =========================================================
+   MEETING LINK
+   ========================================================= */
+
+.meeting-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 14px;
+    padding: 9px 15px;
+    background: #5146e5;
+    color: #ffffff;
+    border-radius: 9px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 650;
+    transition: background 0.2s ease;
+}
+
+.meeting-link:hover {
+    background: #4338ca;
+}
+
+
+/* =========================================================
+   EMPTY EVENTS
+   ========================================================= */
+
+.empty-events {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.empty-icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f3ff;
+    border-radius: 50%;
+    font-size: 22px;
+    margin-bottom: 12px;
+}
+
+.empty-events h3 {
+    margin: 0;
+    color: #344054;
+    font-size: 15px;
+}
+
+.empty-events p {
+    margin: 7px 0 0;
+    color: #8a95a8;
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   ALL INTERVIEWS TABLE SECTION
+   ========================================================= */
+
+.interview-table-section {
+    background: #ffffff;
+    border: 1px solid #e8ebf2;
+    border-radius: 18px;
+    box-shadow: 0 7px 22px rgba(20, 30, 55, 0.05);
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 21px 24px;
+    border-bottom: 1px solid #edf0f5;
+}
+
+.table-header h2 {
+    margin: 0;
+    font-size: 19px;
+    color: #172033;
+}
+
+.table-header p {
+    margin: 5px 0 0;
+    color: #7a879c;
+    font-size: 13px;
+}
+
+.total-interviews {
+    background: #f1f3ff;
+    color: #5146e5;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.interview-table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    background: #ffffff;
+}
+
+.interview-table th {
+    padding: 14px 16px;
+    background: #f8f9fc;
+    color: #68758d;
+    border-bottom: 1px solid #e8ebf2;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.interview-table td {
+    padding: 15px 16px;
+    border-bottom: 1px solid #edf0f5;
+    color: #3c475b;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.interview-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.interview-table tbody tr:hover {
+    background: #fafbff;
+}
+
+.interview-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   CANDIDATE CELL
+   ========================================================= */
+
+.candidate-cell {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.candidate-avatar {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: #eef0ff;
+    color: #5146e5;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.candidate-cell strong {
+    display: block;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #273247;
+    font-size: 13px;
+}
+
+.candidate-cell small {
+    display: block;
+    max-width: 240px;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #8994a7;
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   MODE
+   ========================================================= */
+
+.mode-badge {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 7px;
+    background: #f2f4f8;
+    color: #596579;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+.status.scheduled {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.status.completed {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.status.cancelled {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+   ========================================================= */
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.action-buttons button {
+    margin: 0;
+    padding: 7px 11px;
+    border: 1px solid #dfe3ea;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #344054;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.action-buttons button:hover {
+    background: #f6f7fb;
+    border-color: #cbd1dc;
+}
+
+.action-buttons .complete-btn {
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.action-buttons .complete-btn:hover {
+    background: #f0fdf4;
+}
+
+.action-buttons .cancel-btn {
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+.action-buttons .cancel-btn:hover {
+    background: #fef2f2;
+}
+
+.action-buttons .edit-btn {
+    color: #5146e5;
+    border-color: #c7d2fe;
+}
+
+.action-buttons .edit-btn:hover {
+    background: #eef0ff;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.interview-loading {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #68758d;
+}
+
+.interview-loading h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+    .calendar-section {
+        grid-template-columns: 320px minmax(0, 1fr);
+    }
+
+    .event-details {
+        grid-template-columns: 1fr;
+    }
 
 }
 
-.interview-page h1{
 
-margin-bottom:25px;
+@media (max-width: 850px) {
 
-}
+    .interview-page {
+        padding: 22px;
+    }
 
-.interview-table{
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 
-width:100%;
-border-collapse:collapse;
-background:white;
-border-radius:12px;
-overflow:hidden;
-box-shadow:0 5px 20px rgba(0,0,0,.08);
+    .calendar-section {
+        grid-template-columns: 1fr;
+    }
 
-}
-
-.interview-table th{
-
-background:#6366f1;
-color:white;
-padding:15px;
+    .calendar-card {
+        max-width: 420px;
+    }
 
 }
 
-.interview-table td{
 
-padding:15px;
-border-bottom:1px solid #eee;
+@media (max-width: 550px) {
 
-}
+    .interview-page {
+        padding: 16px;
+    }
 
-.interview-table tr:hover{
+    .interview-header h1 {
+        font-size: 26px;
+    }
 
-background:#f8f9ff;
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
 
-}
+    .calendar-events {
+        padding: 18px;
+    }
 
-.status{
-
-padding:6px 12px;
-border-radius:20px;
-font-size:13px;
-font-weight:bold;
-
-}
-
-.status.scheduled{
-
-background:#dbeafe;
-color:#2563eb;
-
-}
-
-.status.completed{
-
-background:#dcfce7;
-color:#16a34a;
-
-}
-
-.status.cancelled{
-
-background:#fee2e2;
-color:#dc2626;
-
-}
-
-button{
-
-margin-right:10px;
-padding:8px 15px;
-cursor:pointer;
-
-}
-.calendar-section{
-
-display:flex;
-gap:30px;
-margin-bottom:40px;
-
-}
-
-.calendar-events{
-
-flex:1;
-
-}
-
-.event-card{
-
-background:white;
-padding:15px;
-margin-bottom:15px;
-border-radius:12px;
-box-shadow:0 4px 15px rgba(0,0,0,.08);
-
-}
-
-.react-calendar{
-
-border:none;
-border-radius:15px;
-box-shadow:0 5px 20px rgba(0,0,0,.08);
-padding:15px;
-
-}
-
-.summary-grid{
-
-display:grid;
-
-grid-template-columns:repeat(4,1fr);
-
-gap:20px;
-
-margin-bottom:30px;
-
-}
-
-.summary-card{
-
-background:white;
-
-padding:25px;
-
-border-radius:16px;
-
-box-shadow:0 10px 25px rgba(0,0,0,.06);
-
-text-align:center;
-
-}
-
-.summary-card h2{
-
-font-size:36px;
-
-margin:0;
-
-color:#4F46E5;
-
-}
-
-.summary-card p{
-
-margin-top:10px;
-
-font-weight:600;
-
-color:#666;
-
-}
-.status{
-
-padding:8px 14px;
-
-border-radius:50px;
-
-font-weight:600;
-
-color:white;
-
-}
-
-.status.scheduled{
-
-background:#3B82F6;
-color:white;
-
-
-}
-
-.status.completed{
-
-background:#22C55E;
-color:white;
-
-
-}
-
-.status.cancelled{
-
-background:#EF4444;
-color:white;
-
+    .calendar-events-header {
+        flex-direction: column;
+    }
 
 }
