@@ -120,33 +120,37 @@ function InterviewDashboard() {
     // ============================================================
     // FETCH ALL INTERVIEWS
     // ============================================================
+const fetchInterviews = async () => {
 
-    const fetchInterviews = async () => {
+    try {
 
-        try {
+        setLoading(true);
 
-            setLoading(true);
+        const role = localStorage.getItem("role");
 
-            const response =
-                await api.get("/interview/all");
+        const endpoint =
+            role === "ADMIN"
+                ? "/interview/all"
+                : "/interview/my";
 
-            setInterviews(response.data || []);
+        const response =
+            await api.get(endpoint);
 
-        } catch (err) {
+        setInterviews(response.data || []);
 
-            console.error(
-                "Failed to fetch interviews:",
-                err
-            );
+    } catch (err) {
 
-        } finally {
+        console.error(
+            "Failed to fetch interviews:",
+            err
+        );
 
-            setLoading(false);
+    } finally {
 
-        }
-    };
+        setLoading(false);
 
-
+    }
+};
     // ============================================================
     // COMPLETE INTERVIEW
     // ============================================================

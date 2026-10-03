@@ -4,6 +4,7 @@ import com.example.AIResumeScreeneer.entity.Interview;
 import com.example.AIResumeScreeneer.service.InterviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
@@ -39,6 +40,15 @@ public class InterviewController {
 
         return interviewService.getInterview(resumeId);
     }
+
+    @GetMapping("/my")
+public List<Interview> getMyInterviews(
+        Authentication authentication) {
+
+    return interviewService.getMyInterviews(
+            authentication.getName()
+    );
+}
 
     // Update Interview
     @PutMapping("/update/{id}")

@@ -211,6 +211,15 @@ private final NotificationService notificationService;
 
         return interviewRepository.findAll();
     }
+
+    // Get interviews for logged-in candidate only
+public List<Interview> getMyInterviews(String candidateEmail) {
+
+    return interviewRepository
+            .findByResumeCandidateEmailOrderByInterviewDateAscInterviewTimeAsc(
+                    candidateEmail
+            );
+}
     public List<Interview> getTodayInterviews() {
 
     return interviewRepository.findByInterviewDate(

@@ -21,4 +21,9 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
     List<Interview> findByInterviewDate(LocalDate interviewDate);
 
     void deleteByResume(Resume resume);
+
+    List<Interview>
+findByResumeCandidateEmailOrderByInterviewDateAscInterviewTimeAsc(
+        String candidateEmail
+);
 }
