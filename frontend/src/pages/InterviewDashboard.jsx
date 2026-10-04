@@ -6,6 +6,8 @@ import "react-calendar/dist/Calendar.css";
 import InterviewModal from "../components/InterviewModal";
 
 function InterviewDashboard() {
+    const role = localStorage.getItem("role");
+const isAdmin = role === "ADMIN";
 
     const [interviews, setInterviews] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -660,9 +662,11 @@ const fetchInterviews = async () => {
                                         Status
                                     </th>
 
-                                    <th>
-                                        Actions
-                                    </th>
+                                   {isAdmin && (
+    <th>
+        Actions
+    </th>
+)}
 
                                 </tr>
 
@@ -771,63 +775,54 @@ const fetchInterviews = async () => {
                                                 </td>
 
 
-                                                <td>
+                                                {isAdmin && (
+    <td>
 
-                                                    {interview.status ===
-                                                        "SCHEDULED" && (
+        {interview.status === "SCHEDULED" && (
 
-                                                        <div className="action-buttons">
+            <div className="action-buttons">
 
-                                                            <button
-                                                                className="complete-btn"
-                                                                onClick={() =>
-                                                                    markCompleted(
-                                                                        interview.id
-                                                                    )
-                                                                }
-                                                            >
-                                                                Complete
-                                                            </button>
+                <button
+                    className="complete-btn"
+                    onClick={() =>
+                        markCompleted(interview.id)
+                    }
+                >
+                    Complete
+                </button>
 
+                <button
+                    className="cancel-btn"
+                    onClick={() =>
+                        cancelInterview(interview.id)
+                    }
+                >
+                    Cancel
+                </button>
 
-                                                            <button
-                                                                className="cancel-btn"
-                                                                onClick={() =>
-                                                                    cancelInterview(
-                                                                        interview.id
-                                                                    )
-                                                                }
-                                                            >
-                                                                Cancel
-                                                            </button>
+                <button
+                    className="edit-btn"
+                    onClick={() => {
 
+                        setEditingInterview(interview);
 
-                                                            <button
-                                                                className="edit-btn"
-                                                                onClick={() => {
+                        setSelectedCandidate(
+                            interview.resume
+                        );
 
-                                                                    setEditingInterview(
-                                                                        interview
-                                                                    );
+                        setInterviewModalOpen(true);
 
-                                                                    setSelectedCandidate(
-                                                                        interview.resume
-                                                                    );
+                    }}
+                >
+                    Edit
+                </button>
 
-                                                                    setInterviewModalOpen(
-                                                                        true
-                                                                    );
+            </div>
 
-                                                                }}
-                                                            >
-                                                                Edit
-                                                            </button>
+        )}
 
-                                                        </div>
-
-                                                    )}
-
-                                                </td>
+    </td>
+)}
 
                                             </tr>
 

@@ -63,8 +63,15 @@ private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
                 ).permitAll()
 
                 .requestMatchers(
-                    "/api/notifications/**"
-                ).hasAnyRole("ADMIN", "USER")
+    "/api/notifications/**"
+).hasAnyRole("ADMIN", "USER")
+
+.requestMatchers(
+    HttpMethod.PUT,
+    "/api/interview/complete/**",
+    "/api/interview/cancel/**",
+    "/api/interview/update/**"
+).hasRole("ADMIN")
 
                 .requestMatchers(
                     "/api/user/profile",
