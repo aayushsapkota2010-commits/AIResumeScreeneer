@@ -23,45 +23,83 @@ public class CandidateDashboardService {
                         .findFirst()
                         .orElse(null);
 
-        // Candidate has not applied to any job yet
+
+        // ============================================================
+        // CANDIDATE HAS NOT APPLIED TO ANY JOB
+        // ============================================================
+
         if (application == null) {
 
             return CandidateDashboardResponse.builder()
+
                     .resumeId(null)
+
+                    .resumeFileName(null)
+
                     .atsScore(null)
+
                     .matchScore(null)
+
                     .status("NOT_APPLIED")
-                    .uploadedAt(null)
+
+                    .applicationAppliedAt(null)
+
                     .candidateEmail(email)
+
                     .build();
         }
 
-        return CandidateDashboardResponse.builder()
 
-                .resumeId(
-                        application.getResume().getId()
-                )
+        // ============================================================
+        // GET THE EXACT RESUME USED FOR THIS APPLICATION
+        // ============================================================
 
-                .atsScore(
-                        application.getAtsScore()
-                )
+        String resumeFileName = null;
 
-                .matchScore(
-                        application.getMatchScore()
-                )
+        if (application.getResume() != null) {
 
-                .status(
-                        application.getStatus().name()
-                )
+            resumeFileName =
+                    application.getResume().getFileName();
+        }
 
-                .uploadedAt(
-                        application.getAppliedAt().toString()
-                )
 
-                .candidateEmail(
-                        application.getCandidateEmail()
-                )
-
-                .build();
+        // ============================================================
+        // RETURN APPLICATION + RESUME INFORMATION TO FRONTEND
+        // ============================================================
+return CandidateDashboardResponse.builder()
+        .resumeId(
+                application.getResume() != null
+                        ? application.getResume().getId()
+                        : null
+        )
+        .resumeFileName(
+                application.getResume() != null
+                        ? application.getResume().getFileName()
+                        : null
+        )
+        .atsScore(application.getAtsScore())
+        .matchScore(application.getMatchScore())
+        .status(
+                application.getStatus() != null
+                        ? application.getStatus().name()
+                        : "UNKNOWN"
+        )
+        .applicationAppliedAt(
+                application.getAppliedAt() != null
+                        ? application.getAppliedAt().toString()
+                        : null
+        )
+        .jobTitle(
+                application.getJob() != null
+                        ? application.getJob().getTitle()
+                        : null
+        )
+        .companyName(
+                application.getJob() != null
+                        ? application.getJob().getCompany()
+                        : null
+        )
+        .candidateEmail(application.getCandidateEmail())
+        .build();
     }
 }
