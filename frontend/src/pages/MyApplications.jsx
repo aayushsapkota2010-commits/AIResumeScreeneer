@@ -862,219 +862,344 @@ function MyApplications() {
                                         {/* =================================
                                             EXPANDED AI ANALYSIS
                                         ================================= */}
+{isExpanded && (
+    <div className="ai-analysis-panel">
+
+        {/* ================================
+            ANALYSIS HEADER
+        ================================= */}
+
+        <div className="analysis-heading">
+            <div className="analysis-icon">
+                <Sparkles size={19} />
+            </div>
+
+            <div>
+                <h3>Job Match Details</h3>
+
+                <p>
+                    Resume analysis for{" "}
+                    <strong>
+                        {job?.title || "this position"}
+                    </strong>
+                    {job?.company
+                        ? ` at ${job.company}`
+                        : ""}
+                </p>
+            </div>
+        </div>
+
+
+        {/* ================================
+            MATCH SUMMARY
+        ================================= */}
+
+        <div className="match-summary">
+
+            <div className="match-score-main">
+
+                <div className="match-score-circle">
+                    <div>
+                        <strong>
+                            {application.matchScore ?? "—"}
+                        </strong>
+
+                        {application.matchScore !== null &&
+                            application.matchScore !== undefined && (
+                                <span>%</span>
+                            )}
+                    </div>
+                </div>
+
+                <div className="match-score-info">
+                    <span className="match-score-label">
+                        Job Match
+                    </span>
+
+                    <strong>
+                        {application.matchScore == null
+                            ? "Match score unavailable"
+                            : application.matchScore >= 80
+                                ? "Excellent match"
+                                : application.matchScore >= 60
+                                    ? "Good match"
+                                    : application.matchScore >= 40
+                                        ? "Moderate match"
+                                        : "Low match"}
+                    </strong>
+
+                    <p>
+                        Based on the recognized skills required
+                        for this job.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div className="match-score-divider" />
+
+
+            <div className="ats-summary">
+
+                <div className="ats-summary-icon">
+                    <FileText size={18} />
+                </div>
+
+                <div>
+                    <span>ATS Score</span>
+
+                    <strong
+                        className={getScoreClass(
+                            application.atsScore
+                        )}
+                    >
+                        {application.atsScore ?? "—"}
+
+                        {application.atsScore !== null &&
+                            application.atsScore !== undefined
+                            ? "/100"
+                            : ""}
+                    </strong>
+
+                    <p>
+                        Resume screening score
+                    </p>
+                </div>
 
-                                        {isExpanded && (
+            </div>
 
-                                            <div className="ai-analysis-panel">
+        </div>
 
-                                                <div className="analysis-heading">
 
-                                                    <div className="analysis-icon">
+        {/* ================================
+            MATCH PROGRESS
+        ================================= */}
 
-                                                        <Sparkles
-                                                            size={19}
-                                                        />
+        {application.matchScore !== null &&
+            application.matchScore !== undefined && (
+                <div className="match-progress-section">
 
-                                                    </div>
+                    <div className="match-progress-header">
+                        <span>Skill match progress</span>
 
-                                                    <div>
+                        <strong>
+                            {application.matchScore}%
+                        </strong>
+                    </div>
 
-                                                        <h3>
-                                                            AI Match Analysis
-                                                        </h3>
+                    <div className="match-progress-track">
+                        <div
+                            className="match-progress-fill"
+                            style={{
+                                width: `${Math.min(
+                                    Math.max(
+                                        application.matchScore,
+                                        0
+                                    ),
+                                    100
+                                )}%`
+                            }}
+                        />
+                    </div>
 
-                                                        <p>
-                                                            How your resume
-                                                            compares with
-                                                            this job.
-                                                        </p>
+                </div>
+            )}
 
-                                                    </div>
 
-                                                </div>
+        {/* ================================
+            SKILLS
+        ================================= */}
 
+        <div className="analysis-grid">
 
-                                                <div className="analysis-grid">
+            {/* MATCHED SKILLS */}
 
-                                                    {/* MATCHED SKILLS */}
+            <div className="skills-box matched-box">
 
-                                                    <div className="skills-box matched-box">
+                <div className="skills-box-header">
 
-                                                        <h4>
-                                                            <CheckCircle2
-                                                                size={17}
-                                                            />
+                    <div className="skills-box-title">
+                        <CheckCircle2 size={17} />
 
-                                                            Matched Skills
-                                                        </h4>
+                        <h4>Matched Skills</h4>
+                    </div>
 
-                                                        {application.matchedSkills ? (
+                    <span className="skills-count">
+                        {application.matchedSkills
+                            ? application.matchedSkills
+                                .split(",")
+                                .filter(
+                                    (skill) =>
+                                        skill.trim()
+                                ).length
+                            : 0}
+                    </span>
 
-                                                            <div className="skills-list">
+                </div>
 
-                                                                {application.matchedSkills
-                                                                    .split(",")
-                                                                    .map(
-                                                                        (
-                                                                            skill
-                                                                        ) => (
 
-                                                                            <span
-                                                                                key={
-                                                                                    skill
-                                                                                }
-                                                                            >
-                                                                                ✓{" "}
-                                                                                {skill.trim()}
-                                                                            </span>
+                {application.matchedSkills ? (
+                    <div className="skills-list">
 
-                                                                        )
-                                                                    )}
+                        {application.matchedSkills
+                            .split(",")
+                            .map((skill) => skill.trim())
+                            .filter(Boolean)
+                            .map((skill) => (
+                                <span key={skill}>
+                                    ✓ {skill}
+                                </span>
+                            ))}
 
-                                                            </div>
+                    </div>
+                ) : (
+                    <p className="no-skill-data">
+                        No matched skills recorded.
+                    </p>
+                )}
 
-                                                        ) : (
+            </div>
 
-                                                            <p className="no-skill-data">
-                                                                No matched skills
-                                                                recorded.
-                                                            </p>
 
-                                                        )}
+            {/* MISSING SKILLS */}
 
-                                                    </div>
+            <div className="skills-box missing-box">
 
+                <div className="skills-box-header">
 
-                                                    {/* MISSING SKILLS */}
+                    <div className="skills-box-title">
+                        <Target size={17} />
 
-                                                    <div className="skills-box missing-box">
+                        <h4>Missing Skills</h4>
+                    </div>
 
-                                                        <h4>
-                                                            <Target
-                                                                size={17}
-                                                            />
+                    <span className="skills-count">
+                        {application.missingSkills
+                            ? application.missingSkills
+                                .split(",")
+                                .filter(
+                                    (skill) =>
+                                        skill.trim()
+                                ).length
+                            : 0}
+                    </span>
 
-                                                            Missing Skills
-                                                        </h4>
+                </div>
 
-                                                        {application.missingSkills ? (
 
-                                                            <div className="skills-list">
+                {application.missingSkills ? (
+                    <div className="skills-list">
 
-                                                                {application.missingSkills
-                                                                    .split(",")
-                                                                    .map(
-                                                                        (
-                                                                            skill
-                                                                        ) => (
+                        {application.missingSkills
+                            .split(",")
+                            .map((skill) => skill.trim())
+                            .filter(Boolean)
+                            .map((skill) => (
+                                <span key={skill}>
+                                    + {skill}
+                                </span>
+                            ))}
 
-                                                                            <span
-                                                                                key={
-                                                                                    skill
-                                                                                }
-                                                                            >
-                                                                                +{" "}
-                                                                                {skill.trim()}
-                                                                            </span>
+                    </div>
+                ) : (
+                    <p className="no-skill-data">
+                        No missing skills detected.
+                    </p>
+                )}
 
-                                                                        )
-                                                                    )}
+            </div>
 
-                                                            </div>
+        </div>
 
-                                                        ) : (
 
-                                                            <p className="no-skill-data">
-                                                                No missing skills
-                                                                detected.
-                                                            </p>
+        {/* ================================
+            RECOMMENDATION
+        ================================= */}
 
-                                                        )}
+        <div className="recommendation-box">
 
-                                                    </div>
+            <div className="recommendation-icon">
+                <Sparkles size={17} />
+            </div>
 
-                                                </div>
+            <div>
 
+                <strong>Recommendation</strong>
 
-                                                {/* RECOMMENDATION */}
+                <p>
+                    {application.recommendation ||
+                        "No recommendation available."}
+                </p>
 
-                                                <div className="recommendation-box">
+            </div>
 
-                                                    <div className="recommendation-icon">
+        </div>
 
-                                                        <Sparkles
-                                                            size={17}
-                                                        />
 
-                                                    </div>
+        {/* ================================
+            SUBMITTED RESUME
+        ================================= */}
 
-                                                    <div>
+        <div className="submitted-resume">
 
-                                                        <strong>
-                                                            AI Recommendation
-                                                        </strong>
+            <div>
 
-                                                        <p>
-                                                            {application.recommendation ||
-                                                                "No recommendation available."}
-                                                        </p>
+                <FileText size={19} />
 
-                                                    </div>
+                <div>
 
-                                                </div>
+                    <strong>
+                        Submitted Resume
+                    </strong>
 
+                    <span>
+                        {resume?.fileName || "Resume"}
+                    </span>
 
-                                                {/* RESUME */}
+                </div>
 
-                                                <div className="submitted-resume">
+            </div>
 
-                                                    <div>
 
-                                                        <FileText
-                                                            size={19}
-                                                        />
+            <div className="resume-actions">
 
-                                                        <div>
+                {resume?.id && (
+                    <button
+                        onClick={() =>
+                            window.open(
+                                `${import.meta.env.VITE_API_URL}/resume/view/${resume.id}`,
+                                "_blank"
+                            )
+                        }
+                    >
+                        View Resume
+                    </button>
+                )}
 
-                                                            <strong>
-                                                                Submitted Resume
-                                                            </strong>
 
-                                                            <span>
-                                                                {resume?.fileName ||
-                                                                    "Resume"}
-                                                            </span>
+                {[
+                    "APPLIED",
+                    "SCREENING",
+                    "SHORTLISTED",
+                    "INTERVIEW"
+                ].includes(application.status) && (
+                    <button
+                        className="withdraw-analysis-button"
+                        onClick={() =>
+                            handleWithdraw(application.id)
+                        }
+                    >
+                        Withdraw
+                    </button>
+                )}
 
-                                                        </div>
+            </div>
 
-                                                    </div>
-{resume?.id && (
-    <button
-        onClick={() =>
-            window.open(
-                `${import.meta.env.VITE_API_URL}/resume/view/${resume.id}`,
-                "_blank"
-            )
-        }
-    >
-        View Resume
-    </button>
+        </div>
+
+    </div>
 )}
-
-{["APPLIED", "SCREENING", "SHORTLISTED", "INTERVIEW"].includes(
-    application.status
-) && (
-    <button
-        onClick={() => handleWithdraw(application.id)}
-    >
-        Withdraw Application
-    </button>
-)}
-
-                                                </div>
-
-                                            </div>
-                                        )}
 
                                     </div>
                                 );
