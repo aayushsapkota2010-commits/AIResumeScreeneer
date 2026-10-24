@@ -1,702 +1,194 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { Activity, ArrowDownToLine, ArrowUpRight, Bot, CheckCircle2, FileText, MessageCircle, Send, Sparkles, Target, UserRound, Trash2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import api from "../api/api";
 import RecruiterNotes from "../components/RecruiterNotes";
-import ReactMarkdown from "react-markdown";
-import { FaTrash, FaRobot, FaUser } from "react-icons/fa";
-import { useRef } from "react";
-import {  FaPaperPlane } from "react-icons/fa";
-function ResumeDetails() {
+import "./ResumeDetails.css";
 
+function ResumeDetails() {
     const { id } = useParams();
     const API_URL = import.meta.env.VITE_API_URL;
-
-    const [resume, setResume] =
-        useState(null);
-        const [timeline, setTimeline] =
-    useState([]);
+    const [resume, setResume] = useState(null);
+    const [timeline, setTimeline] = useState([]);
     const [question, setQuestion] = useState("");
-    const chatEndRef = useRef(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-const [messages, setMessages] = useState([
+    const INITIAL_MESSAGES = [
     {
         role: "assistant",
-        text:
-`# 👋 Welcome!
+        text: `## Hey! I'm Avya ✨
 
-I'm your **AI Resume Assistant**.
+I'm your personal AI career assistant.
 
-You can ask me:
-
+I can help you:
 - Summarize this resume
-- Candidate strengths
-- Missing skills
-- Education
-- Experience
-- Spring Boot knowledge
-- Java Projects
+- Identify strengths and potential weaknesses
+- Find missing skills
+- Review projects and experience
+- Prepare for interviews
 
-Ask me anything! 🚀`
+What would you like to explore today?`
     }
-]);
-const [loadingChat, setLoadingChat] = useState(false);
+];
+    const [messages, setMessages] = useState(INITIAL_MESSAGES);
+   
+    const [loadingChat, setLoadingChat] = useState(false);
+    const chatEndRef = useRef(null);
 
-
-    useEffect(() => {   
-
-        api.get(`/resume/${id}`)
-            .then((response) => {
-
-                setResume(response.data);
-
+    useEffect(() => {
+        let active = true;
+        setLoading(true);
+        Promise.all([api.get(`/resume/${id}`), api.get(`/resume/timeline/${id}`)])
+            .then(([resumeResponse, timelineResponse]) => {
+                if (!active) return;
+                setResume(resumeResponse.data);
+                setTimeline(Array.isArray(timelineResponse.data) ? timelineResponse.data : []);
+                setError("");
             })
-            .catch((error) => {
-
-                console.log(error);
-
-            });
-            api.get(`/resume/timeline/${id}`)
-    .then((response) => {
-
-        setTimeline(
-            response.data
-        );
-
-    })
-    .catch((error) => {
-
-        console.log(error);
-
-    });
-
+            .catch((err) => {
+                console.error("Failed to load resume details:", err);
+                if (active) setError("Unable to load this resume. Please refresh and try again.");
+            })
+            .finally(() => { if (active) setLoading(false); });
+        return () => { active = false; };
     }, [id]);
 
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, [messages, loadingChat]);
 
-    const askAI = () => {
-
-    if (!question.trim()) return;
-
-    const userQuestion = question;
-
-    setMessages(prev => [
-
-        ...prev,
-
-        {
-            role: "user",
-            text: userQuestion
-        }
-
-    ]);
-
-    setLoadingChat(true);
-
-    api.post(
-
-        `/resume/chat/${id}`,
-
-        {
-            question: userQuestion
-        }
-
-    )
-
-    .then((response) => {
-
-        setMessages(prev => [
-
-            ...prev,
-
-            {
-                role: "assistant",
-                text: response.data.answer
-            }
-
-        ]);
-
+    const askAI = async (prompt = question) => {
+        const text = prompt.trim();
+        if (!text || loadingChat) return;
+        setMessages((old) => [...old, { role: "user", text }]);
         setQuestion("");
+        setLoadingChat(true);
+        try {
+            const response = await api.post(`/resume/chat/${id}`, { question: text });
+            setMessages((old) => [...old, { role: "assistant", text: response.data?.answer || "No answer was returned. Please try again." }]);
+        } catch (err) {
+            console.error("AI chat failed:", err);
+            setMessages((old) => [...old, { role: "assistant", text: "Sorry, I couldn't answer that right now. Please try again." }]);
+        } finally {
+            setLoadingChat(false);
+        }
+    };
 
-    })
+    const downloadReport = async () => {
+        try {
+            const response = await api.get(`/resume/report/${resume.id}`, { responseType: "blob" });
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "resume-report.pdf";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download failed:", err);
+            window.alert("Download failed. Please try again.");
+        }
+    };
 
-    .catch((error) => {
+    const openPdf = () => window.open(`${API_URL}/resume/view/${id}`, "_blank", "noopener,noreferrer");
+    const dateLabel = (value) => {
+        if (!value) return "Date unavailable";
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? value : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    };
+    const skills = typeof resume?.skills === "string" ? resume.skills.split(",").map((s) => s.trim()).filter(Boolean) : [];
+    const ats = Number(resume?.atsScore);
+    const match = Math.min(100, Math.max(0, Number(resume?.matchScore) || 0));
 
-        console.log(error);
-
-    })
-
-    .finally(() => {
-
-        setLoadingChat(false);
-
-    });
-
-};
-
-useEffect(() => {
-
-    chatEndRef.current?.scrollIntoView({
-        behavior: "smooth"
-    });
-
-}, [messages, loadingChat]);
-
-    if (!resume) {
-
-        return <h2>Loading...</h2>;
-    }
+    if (loading) return <main className="resume-details-page"><div className="rd-state"><span className="rd-state-icon"><Sparkles /></span><h2>Loading candidate profile</h2><p>Gathering resume insights and activity…</p></div></main>;
+    if (error || !resume) return <main className="resume-details-page"><div className="rd-state"><FileText size={30} /><h2>Resume unavailable</h2><p>{error || "This resume could not be found."}</p><button className="rd-btn rd-btn-primary" onClick={() => window.location.reload()}>Try again</button></div></main>;
 
     return (
+        <main className="resume-details-page">
+            <div className="rd-glow" />
+            <header className="rd-header">
+                <div><div className="rd-eyebrow"><span /> RECRUITMENT WORKSPACE</div><h1>Candidate overview</h1><p>Review resume quality, candidate signals, and recruitment activity in one place.</p></div>
+                <div className="rd-header-actions">
+                    <button className="rd-btn rd-btn-secondary" onClick={openPdf}><ArrowUpRight size={16} /> Open original PDF</button>
+                    <button className="rd-btn rd-btn-primary" onClick={downloadReport}><ArrowDownToLine size={16} /> Download report</button>
+                </div>
+            </header>
 
-        <div
-            style={{
-                padding: "20px"
-            }}
-        >
+            <section className="rd-candidate-banner">
+                <div className="rd-candidate">
+                    <div className="rd-avatar">{(resume.fileName || "C").slice(0, 1).toUpperCase()}</div>
+                    <div className="rd-candidate-info"><span className="rd-kicker">CANDIDATE FILE</span><h2 title={resume.fileName}>{resume.fileName || "Resume file"}</h2><p><FileText size={14} /> Resume ID: {resume.id}</p></div>
+                </div>
+                <span className="rd-status"><span />{String(resume.status || "Pending").replaceAll("_", " ")}</span>
+            </section>
 
-            <h1>
-                Resume Details
-            </h1>
+            <section className="rd-metrics">
+                <article className="rd-metric rd-ats">
+                    <div className="rd-metric-label"><span><FileText size={17} /></span> ATS SCORE</div>
+                    <div className="rd-metric-number">{resume.atsScore ?? "—"}<small>{resume.atsScore != null ? "/100" : ""}</small></div>
+                    <div className="rd-track"><span style={{ width: `${Math.min(100, Math.max(0, ats || 0))}%` }} /></div>
+                    <p>{ats >= 80 ? "Strong resume screening score" : ats >= 60 ? "Good foundation to build on" : "Review suggestions below to improve"}</p>
+                </article>
+                <article className="rd-metric rd-match">
+                    <div className="rd-metric-label"><span><Target size={17} /></span> MATCH SCORE</div>
+                    <div className="rd-metric-number">{resume.matchScore ?? 0}<small>%</small></div>
+                    <div className="rd-track"><span style={{ width: `${match}%` }} /></div>
+                    <p>Alignment with the selected job criteria</p>
+                </article>
+                <article className="rd-metric rd-stage">
+                    <div className="rd-metric-label"><span><Activity size={17} /></span> APPLICATION STATUS</div>
+                    <div className="rd-stage-value">{String(resume.status || "Pending").replaceAll("_", " ")}</div>
+                    <p>Current stage in the recruitment workflow</p>
+                    <div className="rd-stage-note"><CheckCircle2 size={14} /> Workflow status</div>
+                </article>
+            </section>
 
-            <div
-                style={{
-                    display: "flex",
-                    gap: "20px",
-                    marginTop: "20px",
-                    flexWrap: "wrap"
-                }}
-            >
+            <div className="rd-layout">
+                <div className="rd-main-column">
+                    <section className="rd-panel">
+                        <div className="rd-panel-title"><span className="rd-panel-icon"><FileText size={18} /></span><div><h2>Resume profile</h2><p>Extracted information from the uploaded document.</p></div></div>
+                        <div className="rd-file-row"><span className="rd-file-icon"><FileText size={20} /></span><div className="rd-file-text"><small>FILE NAME</small><strong title={resume.fileName}>{resume.fileName || "No file name available"}</strong></div><button className="rd-icon-btn" onClick={openPdf} aria-label="Open PDF"><ArrowUpRight size={17} /></button></div>
+                        <div className="rd-divider" />
+                        <div className="rd-panel-title"><span className="rd-panel-icon rd-green"><Sparkles size={18} /></span><div><h2>Detected skills</h2><p>{skills.length} listed skill{skills.length === 1 ? "" : "s"}</p></div></div>
+                        {skills.length ? <div className="rd-skills">{skills.map((skill, i) => <span key={`${skill}-${i}`}>{skill}</span>)}</div> : <p className="rd-empty">No skills were recorded for this resume.</p>}
+                        <div className="rd-divider" />
+                        <div className="rd-panel-title"><span className="rd-panel-icon rd-amber"><Sparkles size={18} /></span><div><h2>Improvement suggestions</h2><p>Recommendations from resume screening.</p></div></div>
+                        <div className="rd-suggestions">{resume.suggestions ? <ReactMarkdown>{resume.suggestions}</ReactMarkdown> : <p className="rd-empty">No suggestions are available yet.</p>}</div>
+                        <div className="rd-report-actions"><button className="rd-btn rd-btn-secondary" onClick={downloadReport}><ArrowDownToLine size={16} /> Download PDF report</button><button className="rd-btn rd-btn-quiet" onClick={openPdf}>Open original <ArrowUpRight size={15} /></button></div>
+                    </section>
 
-                <div
-                    style={{
-                        border: "1px solid #ddd",
-                        padding: "20px",
-                        borderRadius: "10px",
-                        width: "220px"
-                    }}
-                >
-                    <h3>ATS Score</h3>
-
-                    <h1
-                        style={{
-                            color:
-                                resume.atsScore >= 80
-                                    ? "green"
-                                    : "orange"
-                        }}
-                    >
-                        {resume.atsScore}
-                    </h1>
-
+                    <section className="rd-panel">
+                        <div className="rd-panel-title"><span className="rd-panel-icon"><Activity size={18} /></span><div><h2>Candidate timeline</h2><p>Activity associated with this resume.</p></div><span className="rd-count">{timeline.length} events</span></div>
+                        {timeline.length ? <div className="rd-timeline">{timeline.map((item, index) => <article className="rd-timeline-item" key={item.id ?? `${item.activity}-${index}`}><span className="rd-timeline-dot" /><div><strong>{item.activity || "Recruitment activity"}</strong><time>{dateLabel(item.createdAt)}</time></div></article>)}</div> : <div className="rd-timeline-empty"><Activity size={21} /><strong>No activity recorded yet</strong><p>Candidate events will appear here as the recruitment process progresses.</p></div>}
+                    </section>
                 </div>
 
-                <div
-                    style={{
-                        border: "1px solid #ddd",
-                        padding: "20px",
-                        borderRadius: "10px",
-                        width: "220px"
-                    }}
-                >
-                    <h3>Match Score</h3>
-
-                    <h1>
-                        {resume.matchScore || 0}%
-                    </h1>
-
-                </div>
-
-                <div
-                    style={{
-                        border: "1px solid #ddd",
-                        padding: "20px",
-                        borderRadius: "10px",
-                        width: "220px"
-                    }}
-                >
-                    <h3>Status</h3>
-
-                    <h2>
-                        {resume.status}
-                    </h2>
-
-                </div>
-
+                <aside className="rd-side-column">
+                    <section className="rd-assistant">
+                        <header className="rd-assistant-header"><div className="rd-assistant-brand"><span><Bot size={21} /></span><div><h2>Avya AI</h2><p><i /> Ready to help you review</p></div></div><button className="rd-clear" onClick={() => setMessages(INITIAL_MESSAGES)} title="Clear chat" aria-label="Clear chat"><Trash2 size={16} /></button></header>
+                        <div className="rd-chat-hint"><Sparkles size={15} /> Ask about this candidate's skills, experience, and projects.</div>
+                        <div className="rd-chat" aria-live="polite">
+                            {!messages.length && <div className="rd-chat-empty"><span><MessageCircle size={22} /></span><strong>Start a conversation</strong><p>Ask a focused question about this candidate.</p></div>}
+                            {messages.map((message, index) => <div className={`rd-message rd-message-${message.role}`} key={`${message.role}-${index}`}><span className="rd-message-avatar">{message.role === "assistant" ? <Bot size={16} /> : <UserRound size={16} />}</span><div className="rd-message-body"><small>{message.role === "assistant" ? "AI ASSISTANT" : "YOU"}</small><div className="rd-markdown"><ReactMarkdown>{message.text}</ReactMarkdown></div></div></div>)}
+                            {loadingChat && <div className="rd-message rd-message-assistant"><span className="rd-message-avatar"><Bot size={16} /></span><div className="rd-message-body"><small>AI ASSISTANT</small><div className="rd-typing"><i /><i /><i /></div></div></div>}
+                            <div ref={chatEndRef} />
+                        </div>
+                        <form className="rd-composer" onSubmit={(e) => { e.preventDefault(); askAI(); }}><input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask Avya about this candidate…" aria-label="Ask Avya about this candidate" disabled={loadingChat} /><button type="submit" disabled={!question.trim() || loadingChat} aria-label="Send question"><Send size={17} /></button></form>
+                        <div className="rd-prompts"><small>QUICK PROMPTS</small>{["Summarize this resume", "What are the candidate's key strengths?", "What skills are missing for this role?", "What are the candidate's potential weaknesses?","Generate interview questions"].map((prompt) => <button type="button" key={prompt} disabled={loadingChat} onClick={() => askAI(prompt)}>{prompt}<ArrowUpRight size={13} /></button>)}</div>
+                    </section>
+                </aside>
+                <section className="rd-notes-panel">
+                    <div className="rd-panel-title">
+                        <span className="rd-panel-icon"><FileText size={18} /></span>
+                        <div><h2>Recruiter notes</h2><p>Private notes to support your hiring decision.</p></div>
+                    </div>
+                    <div className="rd-notes"><RecruiterNotes resumeId={resume.id} /></div>
+                </section>
             </div>
-
-            <br />
-
-            <div
-                style={{
-                    border: "1px solid #ddd",
-                    padding: "20px",
-                    borderRadius: "10px"
-                }}
-            >
-
-                <h3>File Name</h3>
-
-                <p>
-                    {resume.fileName}
-                </p>
-
-            </div>
-
-            <br />
-
-            <div
-                style={{
-                    border: "1px solid #ddd",
-                    padding: "20px",
-                    borderRadius: "10px"
-                }}
-            >
-
-                <h3>Skills</h3>
-
-                <p>
-                    {resume.skills}
-                </p>
-
-            </div>
-
-            <br />
-
-            <div
-                style={{
-                    border: "1px solid #ddd",
-                    padding: "20px",
-                    borderRadius: "10px"
-                }}
-            >
-
-                <h3>Suggestions</h3>
-
-                <p>
-                    {resume.suggestions}
-                </p>
-
-            </div>
-
-            <br />
-<button
-    style={{
-        padding: "10px 20px",
-        cursor: "pointer"
-    }}
-    onClick={async () => {
-
-        try {
-
-            const response =
-                await api.get(
-                    `/resume/report/${resume.id}`,
-                    {
-                        responseType: "blob"
-                    }
-                );
-
-            const url =
-                window.URL.createObjectURL(
-                    new Blob([response.data])
-                );
-
-            const link =
-                document.createElement("a");
-
-            link.href = url;
-
-            link.setAttribute(
-                "download",
-                "resume-report.pdf"
-            );
-
-            document.body.appendChild(link);
-
-            link.click();
-
-            link.remove();
-
-        } catch (error) {
-
-            console.log(error);
-
-            alert("Download Failed");
-
-        }
-    }}
->
-    Download PDF Report
-</button>
-
-<button
-    style={{
-        padding: "10px 20px",
-        cursor: "pointer",
-        marginLeft: "10px"
-    }}
-    onClick={() =>
-        window.open(
-            `${API_URL}/resume/view/${id}`,
-            "_blank"
-        )
-    }
->
-    Open PDF
-</button>
-
-            <br />
-            <br />
-
-            <div
-    style={{
-        border: "1px solid #ddd",
-        padding: "20px",
-        borderRadius: "10px",
-        marginTop: "20px"
-    }}
->
-
-    <h2>
-        Candidate Timeline
-    </h2>
-
-    {
-        timeline.map((item) => (
-
-            <div
-                key={item.id}
-                style={{
-                    marginBottom: "15px",
-                    paddingBottom: "10px",
-                    borderBottom:
-                        "1px solid #eee"
-                }}
-            >
-
-                <h4>
-                    {item.activity}
-                </h4>
-
-                <small>
-                    {item.createdAt}
-                </small>
-
-            </div>
-
-        ))
-    }
-
-</div>
-<br />
-<br />
-
-<div
-    style={{
-        border: "1px solid #ddd",
-        borderRadius: "10px",
-        padding: "20px"
-    }}
->
-
-    <h2>
-        🤖 AI Resume Assistant
-    </h2>
-
-    <div
-    style={{
-        display: "flex",
-        justifyContent: "space-between",
-        marginBottom: "15px"
-    }}
->
-
-    
-   <button
-    onClick={() => setMessages([])}
-    style={{
-        background: "#ff4d4f",
-        color: "white",
-        border: "none",
-        padding: "10px 18px",
-        borderRadius: "8px",
-        cursor: "pointer",
-        marginBottom: "15px"
-    }}
->
-    <FaTrash /> Clear Chat
-</button>
-
-</div>
-
-  <div
-    style={{
-        height: "500px",
-        overflowY: "auto",
-        padding: "25px",
-        borderRadius: "20px",
-        background: "#f8fafc",
-        border: "1px solid #e5e7eb",
-        boxShadow: "0 5px 20px rgba(0,0,0,.08)",
-        marginTop: "20px",
-        marginBottom: "20px"
-    }}
->
-
-        {
-            messages.map((message, index) => (
-
-<div
-    key={index}
-    style={{
-        display: "flex",
-        justifyContent:
-            message.role === "user"
-                ? "flex-end"
-                : "flex-start",
-        marginBottom: "20px"
-    }}
->
-
-    {
-        message.role === "assistant" &&
-
-        <div
-            style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: "#1976d2",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: "10px"
-            }}
-        >
-            <FaRobot />
-        </div>
-    }
-
-   <div
-    style={{
-        background: "#fff",
-        padding: "15px",
-        borderRadius: "15px",
-        boxShadow: "0 5px 15px rgba(0,0,0,.08)",
-
-        maxWidth: "70%",
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-        lineHeight: "1.7"
-    }}
->
-<ReactMarkdown>
-    {message.text}
-</ReactMarkdown></div>
-
-    {
-        message.role === "user" &&
-
-        <div
-            style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: "#444",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginLeft: "10px"
-            }}
-        >
-            <FaUser />
-        </div>
-    }
-
-</div>
-
-))
-        }
-
-        {
-loadingChat && (
-
-<div
-style={{
-display:"flex",
-gap:"10px",
-alignItems:"center"
-}}
->
-
-<div
-style={{
-width:40,
-height:40,
-borderRadius:"50%",
-background:"#10b981",
-display:"flex",
-justifyContent:"center",
-alignItems:"center",
-color:"white"
-}}
->
-
-<FaRobot/>
-
-</div>
-
-<div
-style={{
-background:"white",
-padding:"15px 20px",
-borderRadius:"18px",
-boxShadow:"0 3px 12px rgba(0,0,0,.08)"
-}}
->
-
-<div className="typing">
-
-<span></span>
-
-<span></span>
-
-<span></span>
-
-</div>
-</div>
-
-</div>
-
-)
-}
-        <div ref={chatEndRef}></div>
-
-    </div>
-
-    <div
-style={{
-display:"flex",
-gap:"15px",
-alignItems:"center"
-}}
->
-
-<input
-
-type="text"
-
-placeholder="Ask about skills, education, projects, experience..."
-
-value={question}
-
-onChange={(e)=>setQuestion(e.target.value)}
-
-onKeyDown={(e)=>{
-
-if(e.key==="Enter"){
-
-askAI();
-
-}
-
-}}
-
-style={{
-
-flex:1,
-
-padding:"18px",
-
-borderRadius:"40px",
-
-border:"1px solid #ddd",
-
-fontSize:"16px",
-
-outline:"none"
-
-}}
-
-/>
-
-<button
-
-onClick={askAI}
-
-style={{
-
-width:"60px",
-
-height:"60px",
-
-borderRadius:"50%",
-
-background:"#2563eb",
-
-border:"none",
-
-cursor:"pointer",
-
-color:"white",
-
-fontSize:"22px",
-
-boxShadow:"0 4px 15px rgba(37,99,235,.4)"
-
-}}
-
->
-
-<FaPaperPlane/>
-
-</button>
-
-</div>
-
-</div>
-<div
-    style={{
-        marginTop: "20px"
-    }}
->
-
-{[
-"Summarize this resume",
-"What are candidate strengths?",
-"Does candidate know Spring Boot?",
-"What are weaknesses?"
-].map((q) => (
-
-<button
-
-key={q}
-
-onClick={() => setQuestion(q)}
-
-style={{
-marginRight: "10px",
-marginBottom: "10px",
-padding: "8px 15px",
-cursor: "pointer"
-}}
-
->
-
-{q}
-
-</button>
-
-))}
-
-</div>
-
-            <RecruiterNotes
-                resumeId={resume.id}
-            />
-
-        </div>
+        </main>
     );
 }
 

@@ -898,7 +898,15 @@ function MyApplications() {
 
             <div className="match-score-main">
 
-                <div className="match-score-circle">
+                <div
+                    className="match-score-circle"
+                    style={{
+                        "--match-score": Math.min(
+                            Math.max(application.matchScore ?? 0, 0),
+                            100
+                        )
+                    }}
+                >
                     <div>
                         <strong>
                             {application.matchScore ?? "—"}

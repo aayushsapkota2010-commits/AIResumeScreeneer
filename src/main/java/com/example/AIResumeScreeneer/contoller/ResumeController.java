@@ -640,9 +640,7 @@ public ResumeChatResponse chat(
                     .findById(id)
                     .orElseThrow();
 
-    System.out.println("========== EXTRACTED TEXT ==========");
-    System.out.println(resume.getExtractedText());
-    System.out.println("===================================");
+
 
     return resumeChatService.askQuestion(
 

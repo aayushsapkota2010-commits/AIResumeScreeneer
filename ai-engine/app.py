@@ -7,8 +7,6 @@ import os
 
 
 load_dotenv()
-print("Loaded key:")
-print(os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI()
 
@@ -210,43 +208,83 @@ class ResumeChatRequest(BaseModel):
     question: str
 
 
+
 @app.post("/resume-chat")
 def resume_chat(request: ResumeChatRequest):
 
     prompt = f"""
-You are an ATS Resume Assistant.
+You are an intelligent AI Resume and Career Assistant.
 
-Answer ONLY from the resume below.
+Your job is to help users understand their resumes, identify gaps,
+prepare for interviews, and improve their career prospects.
 
-Rules:
-1. Never use your own knowledge.
-2. Never assume anything.
-3. Never guess.
-4. If the answer is not present in the resume, reply exactly:
-
-This information is not present in the resume.
-
-Resume:
+RESUME:
 ------------------------
 {request.resumeText}
 ------------------------
 
-Question:
+USER QUESTION:
 {request.question}
 
-Return only the answer.
+RULES:
+
+1. Understand the user's intent before answering.
+
+2. For factual questions about education, experience, skills,
+   projects, certifications, and achievements, use only information
+   supported by the resume. Never invent personal facts.
+
+3. For questions about weaknesses, missing skills, resume quality,
+   improvements, or interview preparation, analyze the resume
+   critically and provide useful feedback using general career knowledge.
+
+4. Distinguish between facts stated in the resume, potential gaps
+   inferred from the resume, and general recommendations.
+
+5. When discussing weaknesses, focus on observable resume gaps,
+   such as missing measurable project results or limited evidence
+   of practical experience. Do not claim these are definite
+   personal weaknesses.
+
+6. Give specific reasons and examples from the resume wherever possible.
+
+7. If information is missing, explain what cannot be determined
+   instead of simply refusing to answer.
+
+8. Keep answers clear, natural, and helpful. Use bullet points
+   when useful.
+
+9. Give actionable steps when the user asks how to improve something.
+
+10. If no target job description is provided, do not claim a skill
+    is required for a specific job.
+
+Now answer the user's question.
 """
 
-    response = model.generate_content(prompt)
-   
-    print("========== RECEIVED ==========")
-    print(request.resumeText)
-    print("==============================")
+    try:
+        response = model.generate_content(prompt)
+
+        answer = getattr(response, "text", None)
+
+        if not answer or not answer.strip():
+            answer = (
+                "I couldn't generate an answer right now. "
+                "Please try again."
+            )
+
+        return {"answer": answer}
+
+    except Exception:
+        return {
+            "answer": (
+                "I'm having trouble connecting to the AI service. "
+                "Please try again in a moment."
+            )
+        }
 
 
-    return {
-        "answer": response.text
-    }
+
 
 class InterviewQuestionRequest(BaseModel):
     resumeText: str
@@ -294,51 +332,3 @@ Project Questions:
         "questions": response.text
     }
 
-class InterviewQuestionRequest(BaseModel):
-    resumeText: str
-
-
-@app.post("/interview-questions")
-def interview_questions(request: InterviewQuestionRequest):
-
-    prompt = f"""
-You are a Senior Technical Interviewer.
-
-Resume:
-
-{request.resumeText}
-
-Generate interview questions based ONLY on the resume.
-
-Return exactly in this format:
-
-Technical Questions
-1.
-2.
-3.
-4.
-5.
-
-HR Questions
-1.
-2.
-3.
-4.
-5.
-
-Project Questions
-1.
-2.
-3.
-4.
-5.
-
-Do not explain anything.
-Do not add markdown.
-"""
-
-    response = model.generate_content(prompt)
-
-    return {
-        "questions": response.text
-    }

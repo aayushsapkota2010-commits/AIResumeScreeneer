@@ -1,3 +1,4 @@
+
 package com.example.AIResumeScreeneer.service;
 
 import org.springframework.stereotype.Service;
@@ -9,32 +10,20 @@ import com.example.AIResumeScreeneer.dto.ResumeChatResponse;
 @Service
 public class ResumeChatService {
 
+    private final RestTemplate restTemplate = new RestTemplate();
+
     public ResumeChatResponse askQuestion(
-
             String resumeText,
-
             String question) {
 
-        RestTemplate restTemplate =
-                new RestTemplate();
+        ResumeChatRequest request = new ResumeChatRequest();
 
-        ResumeChatRequest request =
-                new ResumeChatRequest();
+        request.setResumeText(resumeText);
+        request.setQuestion(question);
 
-        request.setResumeText(
-                resumeText);
-
-        request.setQuestion(
-                question);
-System.out.println("=================================");
-System.out.println(resumeText);
-System.out.println("=================================");
         return restTemplate.postForObject(
-
                 "http://localhost:8000/resume-chat",
-
                 request,
-
                 ResumeChatResponse.class
         );
     }

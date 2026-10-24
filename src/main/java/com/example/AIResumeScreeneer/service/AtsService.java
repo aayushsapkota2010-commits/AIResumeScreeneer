@@ -592,41 +592,48 @@ public class AtsService {
     }
 
 
-    private int calculateSectionScore(
-            String resume,
-            int maximumScore,
-            String... keywords) {
 
-        int matches = 0;
+private int calculateSectionScore(
+        String resume,
+        int maximumScore,
+        String... keywords) {
 
-        for (String keyword : keywords) {
+    int headingIndex = -1;
+    String matchedHeading = "";
 
-            if (resume.contains(
-                    keyword.toLowerCase())) {
+    for (String keyword : keywords) {
+        int index = resume.indexOf(keyword.toLowerCase());
 
-                matches++;
-            }
+        if (index >= 0 && (headingIndex == -1 || index < headingIndex)) {
+            headingIndex = index;
+            matchedHeading = keyword.toLowerCase();
         }
-
-        if (matches == 0) {
-            return 0;
-        }
-
-        /*
-         * One section heading gives partial credit.
-         * Multiple related indicators give higher credit.
-         */
-
-        if (matches >= 3) {
-            return maximumScore;
-        }
-
-        if (matches == 2) {
-            return (maximumScore * 80) / 100;
-        }
-
-        return (maximumScore * 60) / 100;
     }
+
+    if (headingIndex == -1) {
+        return 0;
+    }
+
+    // Examine the text after the detected heading.
+    int start = headingIndex + matchedHeading.length();
+    String sectionText = resume.substring(start).trim();
+
+    // Limit the inspected section to avoid counting the entire resume.
+    int nextHeading = sectionText.indexOf(" education ");
+    if (nextHeading >= 0) {
+        sectionText = sectionText.substring(0, nextHeading);
+    }
+
+    if (sectionText.length() < 40) {
+        return maximumScore / 4;
+    }
+
+    if (sectionText.length() < 120) {
+        return maximumScore / 2;
+    }
+
+    return maximumScore;
+}
 
 
     private int calculateCompletenessScore(
