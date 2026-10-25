@@ -146,50 +146,296 @@ What would you like to explore today?`
                 </article>
             </section>
 
-            <div className="rd-layout">
-                <div className="rd-main-column">
-                    <section className="rd-panel">
-                        <div className="rd-panel-title"><span className="rd-panel-icon"><FileText size={18} /></span><div><h2>Resume profile</h2><p>Extracted information from the uploaded document.</p></div></div>
-                        <div className="rd-file-row"><span className="rd-file-icon"><FileText size={20} /></span><div className="rd-file-text"><small>FILE NAME</small><strong title={resume.fileName}>{resume.fileName || "No file name available"}</strong></div><button className="rd-icon-btn" onClick={openPdf} aria-label="Open PDF"><ArrowUpRight size={17} /></button></div>
-                        <div className="rd-divider" />
-                        <div className="rd-panel-title"><span className="rd-panel-icon rd-green"><Sparkles size={18} /></span><div><h2>Detected skills</h2><p>{skills.length} listed skill{skills.length === 1 ? "" : "s"}</p></div></div>
-                        {skills.length ? <div className="rd-skills">{skills.map((skill, i) => <span key={`${skill}-${i}`}>{skill}</span>)}</div> : <p className="rd-empty">No skills were recorded for this resume.</p>}
-                        <div className="rd-divider" />
-                        <div className="rd-panel-title"><span className="rd-panel-icon rd-amber"><Sparkles size={18} /></span><div><h2>Improvement suggestions</h2><p>Recommendations from resume screening.</p></div></div>
-                        <div className="rd-suggestions">{resume.suggestions ? <ReactMarkdown>{resume.suggestions}</ReactMarkdown> : <p className="rd-empty">No suggestions are available yet.</p>}</div>
-                        <div className="rd-report-actions"><button className="rd-btn rd-btn-secondary" onClick={downloadReport}><ArrowDownToLine size={16} /> Download PDF report</button><button className="rd-btn rd-btn-quiet" onClick={openPdf}>Open original <ArrowUpRight size={15} /></button></div>
-                    </section>
+          
+<div className="rd-layout">
+    {/* LEFT COLUMN */}
+    <div className="rd-main-column">
+        {/* Resume Profile */}
+        <section className="rd-panel">
+            <div className="rd-panel-title">
+                <span className="rd-panel-icon">
+                    <FileText size={18} />
+                </span>
+                <div>
+                    <h2>Resume profile</h2>
+                    <p>Extracted information from the uploaded document.</p>
+                </div>
+            </div>
 
-                    <section className="rd-panel">
-                        <div className="rd-panel-title"><span className="rd-panel-icon"><Activity size={18} /></span><div><h2>Candidate timeline</h2><p>Activity associated with this resume.</p></div><span className="rd-count">{timeline.length} events</span></div>
-                        {timeline.length ? <div className="rd-timeline">{timeline.map((item, index) => <article className="rd-timeline-item" key={item.id ?? `${item.activity}-${index}`}><span className="rd-timeline-dot" /><div><strong>{item.activity || "Recruitment activity"}</strong><time>{dateLabel(item.createdAt)}</time></div></article>)}</div> : <div className="rd-timeline-empty"><Activity size={21} /><strong>No activity recorded yet</strong><p>Candidate events will appear here as the recruitment process progresses.</p></div>}
-                    </section>
+            <div className="rd-file-row">
+                <span className="rd-file-icon">
+                    <FileText size={20} />
+                </span>
+                <div className="rd-file-text">
+                    <small>FILE NAME</small>
+                    <strong title={resume.fileName}>
+                        {resume.fileName || "No file name available"}
+                    </strong>
+                </div>
+                <button
+                    className="rd-icon-btn"
+                    onClick={openPdf}
+                    aria-label="Open PDF"
+                >
+                    <ArrowUpRight size={17} />
+                </button>
+            </div>
+
+            <div className="rd-divider" />
+
+            <div className="rd-panel-title">
+                <span className="rd-panel-icon rd-green">
+                    <Sparkles size={18} />
+                </span>
+                <div>
+                    <h2>Detected skills</h2>
+                    <p>
+                        {skills.length} listed skill
+                        {skills.length === 1 ? "" : "s"}
+                    </p>
+                </div>
+            </div>
+
+            {skills.length ? (
+                <div className="rd-skills">
+                    {skills.map((skill, i) => (
+                        <span key={`${skill}-${i}`}>{skill}</span>
+                    ))}
+                </div>
+            ) : (
+                <p className="rd-empty">
+                    No skills were recorded for this resume.
+                </p>
+            )}
+
+            <div className="rd-divider" />
+
+            <div className="rd-panel-title">
+                <span className="rd-panel-icon rd-amber">
+                    <Sparkles size={18} />
+                </span>
+                <div>
+                    <h2>Improvement suggestions</h2>
+                    <p>Recommendations from resume screening.</p>
+                </div>
+            </div>
+
+            <div className="rd-suggestions">
+                {resume.suggestions ? (
+                    <ReactMarkdown>{resume.suggestions}</ReactMarkdown>
+                ) : (
+                    <p className="rd-empty">
+                        No suggestions are available yet.
+                    </p>
+                )}
+            </div>
+
+            <div className="rd-report-actions">
+                <button
+                    className="rd-btn rd-btn-secondary"
+                    onClick={downloadReport}
+                >
+                    <ArrowDownToLine size={16} />
+                    Download PDF report
+                </button>
+                <button
+                    className="rd-btn rd-btn-quiet"
+                    onClick={openPdf}
+                >
+                    Open original <ArrowUpRight size={15} />
+                </button>
+            </div>
+        </section>
+
+        {/* Candidate Timeline */}
+        <section className="rd-panel">
+            <div className="rd-panel-title">
+                <span className="rd-panel-icon">
+                    <Activity size={18} />
+                </span>
+                <div>
+                    <h2>Candidate timeline</h2>
+                    <p>Activity associated with this resume.</p>
+                </div>
+                <span className="rd-count">
+                    {timeline.length} events
+                </span>
+            </div>
+
+            {timeline.length ? (
+                <div className="rd-timeline">
+                    {timeline.map((item, index) => (
+                        <article
+                            className="rd-timeline-item"
+                            key={item.id ?? `${item.activity}-${index}`}
+                        >
+                            <span className="rd-timeline-dot" />
+                            <div>
+                                <strong>
+                                    {item.activity || "Recruitment activity"}
+                                </strong>
+                                <time>{dateLabel(item.createdAt)}</time>
+                            </div>
+                        </article>
+                    ))}
+                </div>
+            ) : (
+                <div className="rd-timeline-empty">
+                    <Activity size={21} />
+                    <strong>No activity recorded yet</strong>
+                    <p>
+                        Candidate events will appear here as the recruitment
+                        process progresses.
+                    </p>
+                </div>
+            )}
+        </section>
+
+        {/* Recruiter Notes — moved inside the left column */}
+        <section className="rd-notes-panel">
+            <div className="rd-panel-title">
+                <span className="rd-panel-icon">
+                    <FileText size={18} />
+                </span>
+                <div>
+                    <h2>Recruiter notes</h2>
+                    <p>Private notes to support your hiring decision.</p>
+                </div>
+            </div>
+
+            <div className="rd-notes">
+                <RecruiterNotes resumeId={resume.id} />
+            </div>
+        </section>
+    </div>
+
+    {/* RIGHT COLUMN — Avya AI */}
+    <aside className="rd-side-column">
+        <section className="rd-assistant">
+            <header className="rd-assistant-header">
+                <div className="rd-assistant-brand">
+                    <span><Bot size={21} /></span>
+                    <div>
+                        <h2>Avya AI</h2>
+                        <p><i /> Ready to help you review</p>
+                    </div>
                 </div>
 
-                <aside className="rd-side-column">
-                    <section className="rd-assistant">
-                        <header className="rd-assistant-header"><div className="rd-assistant-brand"><span><Bot size={21} /></span><div><h2>Avya AI</h2><p><i /> Ready to help you review</p></div></div><button className="rd-clear" onClick={() => setMessages(INITIAL_MESSAGES)} title="Clear chat" aria-label="Clear chat"><Trash2 size={16} /></button></header>
-                        <div className="rd-chat-hint"><Sparkles size={15} /> Ask about this candidate's skills, experience, and projects.</div>
-                        <div className="rd-chat" aria-live="polite">
-                            {!messages.length && <div className="rd-chat-empty"><span><MessageCircle size={22} /></span><strong>Start a conversation</strong><p>Ask a focused question about this candidate.</p></div>}
-                            {messages.map((message, index) => <div className={`rd-message rd-message-${message.role}`} key={`${message.role}-${index}`}><span className="rd-message-avatar">{message.role === "assistant" ? <Bot size={16} /> : <UserRound size={16} />}</span><div className="rd-message-body"><small>{message.role === "assistant" ? "AI ASSISTANT" : "YOU"}</small><div className="rd-markdown"><ReactMarkdown>{message.text}</ReactMarkdown></div></div></div>)}
-                            {loadingChat && <div className="rd-message rd-message-assistant"><span className="rd-message-avatar"><Bot size={16} /></span><div className="rd-message-body"><small>AI ASSISTANT</small><div className="rd-typing"><i /><i /><i /></div></div></div>}
-                            <div ref={chatEndRef} />
-                        </div>
-                        <form className="rd-composer" onSubmit={(e) => { e.preventDefault(); askAI(); }}><input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask Avya about this candidate…" aria-label="Ask Avya about this candidate" disabled={loadingChat} /><button type="submit" disabled={!question.trim() || loadingChat} aria-label="Send question"><Send size={17} /></button></form>
-                        <div className="rd-prompts"><small>QUICK PROMPTS</small>{["Summarize this resume", "What are the candidate's key strengths?", "What skills are missing for this role?", "What are the candidate's potential weaknesses?","Generate interview questions"].map((prompt) => <button type="button" key={prompt} disabled={loadingChat} onClick={() => askAI(prompt)}>{prompt}<ArrowUpRight size={13} /></button>)}</div>
-                    </section>
-                </aside>
-                <section className="rd-notes-panel">
-                    <div className="rd-panel-title">
-                        <span className="rd-panel-icon"><FileText size={18} /></span>
-                        <div><h2>Recruiter notes</h2><p>Private notes to support your hiring decision.</p></div>
-                    </div>
-                    <div className="rd-notes"><RecruiterNotes resumeId={resume.id} /></div>
-                </section>
+                <button
+                    className="rd-clear"
+                    onClick={() => setMessages(INITIAL_MESSAGES)}
+                    title="Clear chat"
+                    aria-label="Clear chat"
+                >
+                    <Trash2 size={16} />
+                </button>
+            </header>
+
+            <div className="rd-chat-hint">
+                <Sparkles size={15} />
+                Ask about this candidate's skills, experience, and projects.
             </div>
-        </main>
-    );
+
+            <div className="rd-chat" aria-live="polite">
+                {!messages.length && (
+                    <div className="rd-chat-empty">
+                        <span><MessageCircle size={22} /></span>
+                        <strong>Start a conversation</strong>
+                        <p>Ask a focused question about this candidate.</p>
+                    </div>
+                )}
+
+                {messages.map((message, index) => (
+                    <div
+                        className={`rd-message rd-message-${message.role}`}
+                        key={`${message.role}-${index}`}
+                    >
+                        <span className="rd-message-avatar">
+                            {message.role === "assistant" ? (
+                                <Bot size={16} />
+                            ) : (
+                                <UserRound size={16} />
+                            )}
+                        </span>
+
+                        <div className="rd-message-body">
+                            <small>
+                                {message.role === "assistant"
+                                    ? "AI ASSISTANT"
+                                    : "YOU"}
+                            </small>
+                            <div className="rd-markdown">
+                                <ReactMarkdown>{message.text}</ReactMarkdown>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {loadingChat && (
+                    <div className="rd-message rd-message-assistant">
+                        <span className="rd-message-avatar">
+                            <Bot size={16} />
+                        </span>
+                        <div className="rd-message-body">
+                            <small>AI ASSISTANT</small>
+                            <div className="rd-typing">
+                                <i /><i /><i />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div ref={chatEndRef} />
+            </div>
+
+            <form
+                className="rd-composer"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    askAI();
+                }}
+            >
+                <input
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    placeholder="Ask Avya about this candidate…"
+                    aria-label="Ask Avya about this candidate"
+                    disabled={loadingChat}
+                />
+                <button
+                    type="submit"
+                    disabled={!question.trim() || loadingChat}
+                    aria-label="Send question"
+                >
+                    <Send size={17} />
+                </button>
+            </form>
+
+            <div className="rd-prompts">
+                <small>QUICK PROMPTS</small>
+                {[
+                    "Summarize this resume",
+                    "What are the candidate's key strengths?",
+                    "What skills are missing for this role?",
+                    "What are the candidate's potential weaknesses?",
+                    "Generate interview questions",
+                ].map((prompt) => (
+                    <button
+                        type="button"
+                        key={prompt}
+                        disabled={loadingChat}
+                        onClick={() => askAI(prompt)}
+                    >
+                        {prompt}
+                        <ArrowUpRight size={13} />
+                    </button>
+                ))}
+            </div>
+        </section>
+    </aside>
+</div>
+</main>
+);
 }
 
 export default ResumeDetails;
