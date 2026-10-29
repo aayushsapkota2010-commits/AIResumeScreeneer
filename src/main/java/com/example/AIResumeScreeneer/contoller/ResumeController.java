@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.tika.exception.TikaException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import org.xml.sax.SAXException;
 
 import com.example.AIResumeScreeneer.service.AIInterviewService;
@@ -70,11 +71,14 @@ import com.example.AIResumeScreeneer.service.ResumeFilterService;
 
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import com.example.AIResumeScreeneer.dto.RecruiterAnalyticsResponse;
 import com.example.AIResumeScreeneer.dto.RecruiterDashboardChartResponse;
 import com.example.AIResumeScreeneer.dto.RoadmapResponse;
+
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
@@ -82,6 +86,9 @@ import org.springframework.core.io.Resource;
 
 import com.example.AIResumeScreeneer.entity.ApplicationStatus;
 import com.example.AIResumeScreeneer.service.ApplicationService;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
 
 
@@ -156,18 +163,27 @@ public ResponseEntity<String> deleteResume(
                 .build();
     }
 }
-  @GetMapping("/{id}")
-    public Resume getResume(
-            @PathVariable Long id) {
 
-        return resumeRepository
-                .findById(id)
-                .orElseThrow();
+@GetMapping("/{id}")
+public Resume getResume(@PathVariable Long id) {
+    Resume resume = resumeRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Resume not found"));
+
+    if (resume.isDeleted()) {
+        throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Resume not found");
     }
-    @GetMapping("/all")
-public List<Resume> getAllResumes() {
-    return resumeRepository.findAll();
+
+    return resume;
 }
+
+
+@GetMapping("/all")
+public List<Resume> getAllResumes() {
+    return resumeRepository.findByDeletedFalse();
+}
+
 
 @GetMapping("/analyze/{id}")
 public ResumeAnalysisResponse analyzeResume(
@@ -378,33 +394,24 @@ public Resume updateStatus(
 // SO PIPELINE BOARD STAYS IN SYNC
 // ============================================================
 
-ApplicationStatus applicationStatus;
+
+
 
 try {
-
-    applicationStatus =
-            ApplicationStatus.valueOf(
-                    status.name()
-            );
+    ApplicationStatus applicationStatus =
+            ApplicationStatus.valueOf(status.name());
 
     applicationService.updateStatusByResumeId(
             resume.getId(),
             applicationStatus
     );
 
-    System.out.println(
-            "✅ Application status synced: "
-                    + applicationStatus
-    );
-
 } catch (IllegalArgumentException e) {
-
     System.out.println(
-            "⚠️ Resume status "
-                    + status
-                    + " does not exist in ApplicationStatus"
-    );
+            "No matching ApplicationStatus for resume status: "
+                    + status);
 }
+
 
     activityLogService.saveLog(
             "aayush@gmail.com",
@@ -533,29 +540,49 @@ public RoadmapResponse roadmap(
             resume.getExtractedText());
 }
 
+
 @GetMapping("/view/{id}")
 public ResponseEntity<Resource> viewResume(
-        @PathVariable Long id)
-        throws Exception {
+        @PathVariable Long id) throws Exception {
 
-    Resume resume =
-            resumeRepository
-                    .findById(id)
-                    .orElseThrow();
+    Resume resume = resumeRepository.findById(id)
+            .orElseThrow(() ->
+                    new ResponseStatusException(
+                            NOT_FOUND, "Resume not found"));
 
-    Path path =
-            Paths.get(
-                    resume.getFilePath());
+    String filePath = resume.getFilePath();
 
-    Resource resource =
-            new UrlResource(
-                    path.toUri());
+    if (filePath == null || filePath.isBlank()) {
+        throw new ResponseStatusException(
+                NOT_FOUND, "Resume file path is missing");
+    }
+
+    Path path = Paths.get(filePath).toAbsolutePath().normalize();
+
+    System.out.println("Resume ID: " + id);
+    System.out.println("Resume file path: " + path);
+    System.out.println("File exists: " + Files.exists(path));
+
+    if (!Files.exists(path) || !Files.isRegularFile(path)) {
+        throw new ResponseStatusException(
+                NOT_FOUND, "Resume PDF file does not exist");
+    }
+
+    if (!Files.isReadable(path)) {
+        throw new ResponseStatusException(
+                INTERNAL_SERVER_ERROR, "Resume file is not readable");
+    }
+
+    Resource resource = new UrlResource(path.toUri());
 
     return ResponseEntity.ok()
-            .contentType(
-                    MediaType.APPLICATION_PDF)
+            .contentType(MediaType.APPLICATION_PDF)
+            .header(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    "inline; filename=\"" + path.getFileName() + "\"")
             .body(resource);
 }
+
 @PostMapping("/interview-invite/{id}")
 public String sendInterviewInvite(
         @PathVariable Long id,
@@ -654,14 +681,17 @@ public ResumeChatResponse chat(
 // USER - GET MY RESUMES
 // ============================================================
 
+
 @GetMapping("/my")
 public List<Resume> getMyResumes(Principal principal) {
 
     String email = principal.getName();
 
     return resumeRepository
-            .findByCandidateEmailOrderByUploadedAtDesc(email);
+            .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(
+                    email);
 }
+
 
 
 // ============================================================

@@ -33,46 +33,59 @@ const COLORS = [
 
 function AnalyticsDashboard() {
 
-    const [analytics, setAnalytics] = useState(null);
+    
+const [analytics, setAnalytics] = useState(null);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
 
-    const [loading, setLoading] = useState(true);
+useEffect(() => {
+    fetchAnalytics();
+}, []);
 
-    useEffect(() => {
+const fetchAnalytics = async () => {
+    try {
+        setError("");
 
-        fetchAnalytics();
+        const response = await api.get("/analytics/dashboard");
 
-    }, []);
-
-    const fetchAnalytics = async () => {
-
-        try {
-
-            const response =
-                await api.get("/analytics/dashboard");
-
-            setAnalytics(response.data);
-
+        if (!response.data?.statusDistribution) {
+            throw new Error(
+                "Analytics API did not return statusDistribution."
+            );
         }
 
-        catch (err) {
-
-            console.log(err);
-
-        }
-
-        finally {
-
-            setLoading(false);
-
-        }
-
-    };
-
-    if (loading) {
-
-        return <h2>Loading Analytics...</h2>;
-
+        setAnalytics(response.data);
+    } catch (err) {
+        console.error("Failed to load analytics:", err);
+        setError(
+            err.response?.data?.message ||
+            err.message ||
+            "Unable to load analytics."
+        );
+    } finally {
+        setLoading(false);
     }
+};
+
+if (loading) {
+    return <h2>Loading Analytics...</h2>;
+}
+
+if (error || !analytics) {
+    return (
+        <div className="analytics-page">
+            <h2>Analytics could not be loaded</h2>
+            <p>{error || "No analytics data was returned."}</p>
+            <button onClick={() => {
+                setLoading(true);
+                fetchAnalytics();
+            }}>
+                Retry
+            </button>
+        </div>
+    );
+}
+
 
     const pieData = Object.entries(
         analytics.statusDistribution
@@ -81,29 +94,16 @@ function AnalyticsDashboard() {
         value
     }));
 
-    const pipelineData = [
-
-    {
-        stage: "Applied",
-        count: analytics.statusDistribution.Applied
-    },
-
-    {
-        stage: "Shortlisted",
-        count: analytics.statusDistribution.Shortlisted
-    },
-
-    {
-        stage: "Selected",
-        count: analytics.statusDistribution.Selected
-    },
-
-    {
-        stage: "Rejected",
-        count: analytics.statusDistribution.Rejected
-    }
-
+  
+const pipelineData = [
+    { stage: "Applied", count: analytics.statusDistribution.Applied ?? 0 },
+    { stage: "Screening", count: analytics.statusDistribution.Screening ?? 0 },
+    { stage: "Shortlisted", count: analytics.statusDistribution.Shortlisted ?? 0 },
+    { stage: "Interview", count: analytics.statusDistribution.Interview ?? 0 },
+    { stage: "Selected", count: analytics.statusDistribution.Selected ?? 0 },
+    { stage: "Rejected", count: analytics.statusDistribution.Rejected ?? 0 }
 ];
+
 
     return (
 

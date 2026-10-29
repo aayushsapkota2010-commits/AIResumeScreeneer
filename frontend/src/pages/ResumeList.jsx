@@ -74,7 +74,7 @@ function ResumeList() {
 
     try {
 
-        await api.delete(`/resume/${resumeId}`);
+        await api.delete(`/resume/my/${resumeId}`);
 
         // Remove from UI immediately
         setResumes((previous) =>
@@ -85,15 +85,16 @@ function ResumeList() {
 
         alert("Resume deleted successfully");
 
-    } catch (error) {
+   } catch (error) {
+    console.error("Delete status:", error.response?.status);
+    console.error("Delete response:", error.response?.data);
 
-        console.error(
-            "Failed to delete resume:",
-            error
-        );
-
-        alert("Failed to delete resume");
-    }
+    alert(
+        typeof error.response?.data === "string"
+            ? error.response.data
+            : JSON.stringify(error.response?.data)
+    );
+}
 };
 
     const openResume = (resumeId) => {

@@ -26,4 +26,6 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
 findByResumeCandidateEmailOrderByInterviewDateAscInterviewTimeAsc(
         String candidateEmail
 );
+
+boolean existsByResumeId(Long resumeId);
 }

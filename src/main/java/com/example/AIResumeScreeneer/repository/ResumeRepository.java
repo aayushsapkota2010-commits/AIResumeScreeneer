@@ -28,5 +28,16 @@ findTopByCandidateEmailOrderByIdDesc(
         CandidateStatus status);
 
         List<Resume> findByCandidateEmailOrderByUploadedAtDesc(String candidateEmail);
+
+
+
+        List<Resume> findByDeletedFalse();
+
+List<Resume> findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(
+        String candidateEmail);
+
+        long countByDeletedFalse();
+
+        long countByDeletedFalseAndStatus(CandidateStatus status);
         
 }

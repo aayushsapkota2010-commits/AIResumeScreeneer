@@ -92,10 +92,12 @@ private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
                     "/api/resume/my-upload"
                 ).hasRole("USER")
 
-                .requestMatchers(
-                    HttpMethod.DELETE,
-                    "/api/resume/my/**"
-                ).hasRole("USER")
+                
+.requestMatchers(
+    HttpMethod.DELETE,
+    "/api/resume/my/**"
+).hasAnyRole("ADMIN", "USER")
+
 
                 .requestMatchers(
                     "/api/resume/**"

@@ -1,3 +1,4 @@
+
 package com.example.AIResumeScreeneer.service;
 
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.AIResumeScreeneer.entity.Application;
 import com.example.AIResumeScreeneer.entity.ApplicationStatus;
+import com.example.AIResumeScreeneer.entity.CandidateStatus;
 import com.example.AIResumeScreeneer.entity.Job;
 import com.example.AIResumeScreeneer.entity.Resume;
 import com.example.AIResumeScreeneer.repository.ApplicationRepository;
@@ -21,18 +23,11 @@ import lombok.RequiredArgsConstructor;
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
-
     private final JobRepository jobRepository;
-
     private final ResumeRepository resumeRepository;
-
     private final AtsService atsService;
-
     private final JobMatchingService jobMatchingService;
-
-    // NEW
     private final NotificationService notificationService;
-
 
     // ============================================================
     // APPLY FOR JOB
@@ -48,179 +43,102 @@ public class ApplicationService {
                 .orElseThrow(() ->
                         new RuntimeException("Job not found"));
 
-
         if (!"OPEN".equalsIgnoreCase(job.getStatus())) {
-
             throw new RuntimeException(
                     "This job is no longer accepting applications");
         }
-
 
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() ->
                         new RuntimeException("Resume not found"));
 
+        if (resume.isDeleted()) {
+            throw new RuntimeException(
+                    "Cannot apply using a deleted resume");
+        }
 
         if (!candidateEmail.equalsIgnoreCase(
                 resume.getCandidateEmail())) {
-
             throw new RuntimeException(
                     "You are not allowed to use this resume");
         }
 
-
         if (applicationRepository.existsByJobIdAndResumeId(
-                jobId,
-                resumeId)) {
-
+                jobId, resumeId)) {
             throw new RuntimeException(
                     "You have already applied to this job using this resume");
         }
 
-
         String resumeText = resume.getExtractedText();
-
         if (resumeText == null) {
             resumeText = "";
         }
 
-
         String jobDescription = job.getDescription();
-
         if (jobDescription == null) {
             jobDescription = "";
         }
 
+        var matchResult = jobMatchingService.matchResume(
+                resumeText, jobDescription);
 
-        var matchResult =
-                jobMatchingService.matchResume(
-                        resumeText,
-                        jobDescription
-                );
+        int atsScore = atsService.calculateScore(resumeText);
+        int matchScore = matchResult.getMatchPercentage();
 
+        LocalDateTime now = LocalDateTime.now();
 
-        int atsScore =
-                atsService.calculateScore(
-                        resumeText
-                );
-
-
-        int matchScore =
-                matchResult.getMatchPercentage();
-
-
-        System.out.println();
-        System.out.println("========================================");
-        System.out.println("       APPLICATION ANALYSIS");
-        System.out.println("========================================");
-
-        System.out.println(
-                "Candidate = " + candidateEmail
-        );
-
-        System.out.println(
-                "Job = " + job.getTitle()
-        );
-
-        System.out.println(
-                "Resume = " + resume.getFileName()
-        );
-
-        System.out.println(
-                "ATS Score = " + atsScore
-        );
-
-        System.out.println(
-                "Match Score = " + matchScore
-        );
-
-        System.out.println(
-                "Matched Skills = "
-                        + matchResult.getMatchedSkills()
-        );
-
-        System.out.println(
-                "Missing Skills = "
-                        + matchResult.getMissingSkills()
-        );
-
-        System.out.println(
-                "Recommendation = "
-                        + matchResult.getRecommendation()
-        );
-
-        System.out.println("========================================");
-        System.out.println();
-
-
-        LocalDateTime now =
-                LocalDateTime.now();
-
-
-        Application application =
-                Application.builder()
-                        .job(job)
-                        .resume(resume)
-                        .candidateEmail(candidateEmail)
-                        .status(ApplicationStatus.APPLIED)
-                        .appliedAt(now)
-                        .updatedAt(now)
-                        .atsScore(atsScore)
-                        .matchScore(matchScore)
-                        .matchedSkills(
-                                matchResult.getMatchedSkills()
-                        )
-                        .missingSkills(
-                                matchResult.getMissingSkills()
-                        )
-                        .recommendation(
-                                matchResult.getRecommendation()
-                        )
-                        .build();
-
+        Application application = Application.builder()
+                .job(job)
+                .resume(resume)
+                .candidateEmail(candidateEmail)
+                .status(ApplicationStatus.APPLIED)
+                .appliedAt(now)
+                .updatedAt(now)
+                .atsScore(atsScore)
+                .matchScore(matchScore)
+                .matchedSkills(matchResult.getMatchedSkills())
+                .missingSkills(matchResult.getMissingSkills())
+                .recommendation(matchResult.getRecommendation())
+                .build();
 
         return applicationRepository.save(application);
     }
 
-
     // ============================================================
-    // GET MY APPLICATIONS
+    // GET MY ACTIVE APPLICATIONS
     // ============================================================
 
-    public List<Application> getMyApplications(
-            String candidateEmail) {
-
+    public List<Application> getMyApplications(String candidateEmail) {
         return applicationRepository
-                .findByCandidateEmailOrderByAppliedAtDesc(
-                        candidateEmail
-                );
+                .findByCandidateEmailAndResumeDeletedFalseOrderByAppliedAtDesc(
+                        candidateEmail);
     }
 
-
     // ============================================================
-    // GET APPLICATIONS FOR JOB
+    // GET ACTIVE APPLICATIONS FOR A JOB
     // ============================================================
 
-    public List<Application> getApplicationsForJob(
-            Long jobId) {
-
+    public List<Application> getApplicationsForJob(Long jobId) {
         return applicationRepository
-                .findByJobIdOrderByAppliedAtDesc(
-                        jobId
-                );
+                .findByJobIdAndResumeDeletedFalseOrderByAppliedAtDesc(
+                        jobId);
     }
 
-
     // ============================================================
-    // GET ALL APPLICATIONS
+    // GET ALL ACTIVE APPLICATIONS
     // USED BY RECRUITER PIPELINE
     // ============================================================
 
-    public List<Application> getAllApplications() {
-
-        return applicationRepository
-                .findAllByOrderByAppliedAtDesc();
-    }
+   
+public List<Application> getAllApplications() {
+    return applicationRepository
+            .findAllByOrderByAppliedAtDesc()
+            .stream()
+            .filter(application ->
+                    application.getResume() != null
+                    && !application.getResume().isDeleted())
+            .toList();
+}
 
 
     // ============================================================
@@ -232,175 +150,123 @@ public class ApplicationService {
             Long applicationId,
             ApplicationStatus newStatus) {
 
-        // --------------------------------------------------------
-        // 1. FIND APPLICATION
-        // --------------------------------------------------------
+        Application application = applicationRepository
+                .findById(applicationId)
+                .orElseThrow(() ->
+                        new RuntimeException("Application not found"));
 
-        Application application =
-                applicationRepository.findById(applicationId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Application not found"
-                                ));
+        ensureResumeIsActive(application);
 
-
-        // --------------------------------------------------------
-        // 2. GET OLD STATUS
-        // --------------------------------------------------------
-
-        ApplicationStatus oldStatus =
-                application.getStatus();
-
-
-        // --------------------------------------------------------
-        // 3. DON'T CREATE DUPLICATE NOTIFICATION
-        // --------------------------------------------------------
+        ApplicationStatus oldStatus = application.getStatus();
 
         if (oldStatus == newStatus) {
-
             return application;
         }
 
-
-        // --------------------------------------------------------
-        // 4. UPDATE APPLICATION
-        // --------------------------------------------------------
-
         application.setStatus(newStatus);
-
-        application.setUpdatedAt(
-                LocalDateTime.now()
-        );
-
-
-        // --------------------------------------------------------
-        // 5. SAVE APPLICATION
-        // --------------------------------------------------------
+        application.setUpdatedAt(LocalDateTime.now());
 
         Application updatedApplication =
                 applicationRepository.save(application);
 
-                // Sync Application status → Resume status
-if (application.getResume() != null) {
+        // Sync application status to the resume status when possible.
+        if (application.getResume() != null  && !application.getResume().isDeleted()) {
+            try {
+                CandidateStatus resumeStatus =
+                        CandidateStatus.valueOf(newStatus.name());
 
-    try {
+               Resume resume = application.getResume();
+        resume.setStatus(resumeStatus);
+        resumeRepository.save(resume);
 
-        com.example.AIResumeScreeneer.entity.CandidateStatus resumeStatus =
-                com.example.AIResumeScreeneer.entity.CandidateStatus.valueOf(
-                        newStatus.name()
-                );
+            } catch (IllegalArgumentException e) {
+                System.out.println(
+                        "No matching CandidateStatus for " + newStatus);
+            }
+        }
 
-        application.getResume().setStatus(resumeStatus);
+        String candidateEmail = application.getCandidateEmail();
 
-        resumeRepository.save(application.getResume());
-
-        System.out.println(
-                "✅ Resume status synced: "
-                        + resumeStatus
-        );
-
-    } catch (IllegalArgumentException e) {
-
-        System.out.println(
-                "⚠️ Application status "
-                        + newStatus
-                        + " has no matching CandidateStatus"
-        );
-    }
-}
-
-
-        // --------------------------------------------------------
-        // 6. CANDIDATE NOTIFICATION
-        // --------------------------------------------------------
-
-        String candidateEmail =
-                application.getCandidateEmail();
-
-
-        if (candidateEmail != null &&
-                !candidateEmail.isBlank()) {
-
+        if (candidateEmail != null && !candidateEmail.isBlank()) {
             String jobTitle =
-                    application.getJob() != null &&
-                    application.getJob().getTitle() != null
+                    application.getJob() != null
+                            && application.getJob().getTitle() != null
                             ? application.getJob().getTitle()
                             : "your application";
 
-
             notificationService.createCandidateNotification(
-
                     candidateEmail,
-
                     "Application status updated",
-
-                    "Your application for "
-                            + jobTitle
-                            + " has moved from "
-                            + formatStatus(oldStatus)
-                            + " to "
-                            + formatStatus(newStatus)
-                            + ".",
-
-                    "APPLICATION_STATUS_CHANGE"
-            );
-       
+                    "Your application for " + jobTitle
+                            + " has moved from " + formatStatus(oldStatus)
+                            + " to " + formatStatus(newStatus) + ".",
+                    "APPLICATION_STATUS_CHANGE");
         }
 
-
-        // --------------------------------------------------------
-        // 7. LOG
-        // --------------------------------------------------------
-
         System.out.println(
-                "Application #" +
-                        applicationId +
-                        " status changed: " +
-                        oldStatus +
-                        " -> " +
-                        newStatus
-        );
-
+                "Application #" + applicationId
+                        + " status changed: " + oldStatus
+                        + " -> " + newStatus);
 
         return updatedApplication;
     }
 
-
     // ============================================================
-// SYNC APPLICATION STATUS USING RESUME ID
-// USED BY RECRUITER MOVE STAGE
-// ============================================================
+    // UPDATE STATUS USING RESUME ID
 
 @Transactional
 public Application updateStatusByResumeId(
         Long resumeId,
         ApplicationStatus newStatus) {
 
-    Application application =
+    List<Application> applications =
             applicationRepository
-                    .findFirstByResumeIdOrderByAppliedAtDesc(
-                            resumeId
-                    );
+                    .findByResumeIdOrderByAppliedAtDesc(resumeId);
 
-    if (application == null) {
-        throw new RuntimeException(
-                "No application found for this resume"
-        );
+    // A candidate may have a resume without any job applications.
+    // Do not fail the resume status update in that case.
+    if (applications.isEmpty()) {
+        System.out.println(
+                "No applications linked to resume ID: " + resumeId);
+        return null;
     }
 
-    return updateStatus(
-            application.getId(),
-            newStatus
-    );
+    LocalDateTime now = LocalDateTime.now();
+    Application latestActiveApplication = null;
+
+    for (Application application : applications) {
+
+        Resume linkedResume = application.getResume();
+
+        if (linkedResume == null || linkedResume.isDeleted()) {
+            continue;
+        }
+
+        application.setStatus(newStatus);
+        application.setUpdatedAt(now);
+
+        Application savedApplication =
+                applicationRepository.save(application);
+
+        if (latestActiveApplication == null) {
+            latestActiveApplication = savedApplication;
+        }
+    }
+
+    System.out.println(
+            "Application status sync completed for resume ID: "
+                    + resumeId + ", status: " + newStatus);
+
+    return latestActiveApplication;
 }
+
+
 
     // ============================================================
     // FORMAT STATUS
     // ============================================================
 
-    private String formatStatus(
-            ApplicationStatus status) {
-
+    private String formatStatus(ApplicationStatus status) {
         if (status == null) {
             return "Applied";
         }
@@ -411,149 +277,87 @@ public Application updateStatusByResumeId(
     }
 
     // ============================================================
-// WITHDRAW APPLICATION
-// ============================================================
+    // WITHDRAW APPLICATION
+    // ============================================================
 
-@Transactional
-public Application withdrawApplication(
-        Long applicationId,
-        String candidateEmail) {
+    @Transactional
+    public Application withdrawApplication(
+            Long applicationId,
+            String candidateEmail) {
 
-    // --------------------------------------------------------
-    // 1. FIND APPLICATION
-    // --------------------------------------------------------
+        Application application = applicationRepository
+                .findById(applicationId)
+                .orElseThrow(() ->
+                        new RuntimeException("Application not found"));
 
-    Application application =
-            applicationRepository.findById(applicationId)
-                    .orElseThrow(() ->
-                            new RuntimeException(
-                                    "Application not found"
-                            ));
+        ensureResumeIsActive(application);
 
+        if (!candidateEmail.equalsIgnoreCase(
+                application.getCandidateEmail())) {
+            throw new RuntimeException(
+                    "You are not allowed to withdraw this application");
+        }
 
-    // --------------------------------------------------------
-    // 2. VERIFY OWNERSHIP
-    // --------------------------------------------------------
+        ApplicationStatus currentStatus = application.getStatus();
 
-    if (!candidateEmail.equalsIgnoreCase(
-            application.getCandidateEmail())) {
+        if (currentStatus == ApplicationStatus.WITHDRAWN) {
+            throw new RuntimeException(
+                    "Application has already been withdrawn");
+        }
 
-        throw new RuntimeException(
-                "You are not allowed to withdraw this application"
-        );
+        if (currentStatus == ApplicationStatus.SELECTED) {
+            throw new RuntimeException(
+                    "A selected application cannot be withdrawn");
+        }
+
+        if (currentStatus == ApplicationStatus.REJECTED) {
+            throw new RuntimeException(
+                    "A rejected application cannot be withdrawn");
+        }
+
+        application.setStatus(ApplicationStatus.WITHDRAWN);
+        application.setUpdatedAt(LocalDateTime.now());
+
+        Application updatedApplication =
+                applicationRepository.save(application);
+
+        String jobTitle =
+                application.getJob() != null
+                        && application.getJob().getTitle() != null
+                        ? application.getJob().getTitle()
+                        : "the job";
+
+        notificationService.createCandidateNotification(
+                candidateEmail,
+                "Application withdrawn",
+                "Your application for " + jobTitle
+                        + " has been successfully withdrawn.",
+                "APPLICATION_WITHDRAWN");
+
+        notificationService.createNotification(
+                "Application withdrawn",
+                "Candidate " + candidateEmail
+                        + " has withdrawn their application for "
+                        + jobTitle + ".",
+                "APPLICATION_WITHDRAWN");
+
+        System.out.println(
+                "Application #" + applicationId
+                        + " withdrawn by " + candidateEmail);
+
+        return updatedApplication;
     }
 
+    // ============================================================
+    // SHARED VALIDATION
+    // ============================================================
 
-    // --------------------------------------------------------
-    // 3. CHECK CURRENT STATUS
-    // --------------------------------------------------------
+    private void ensureResumeIsActive(Application application) {
+        Resume resume = application.getResume();
 
-    ApplicationStatus currentStatus =
-            application.getStatus();
-
-    if (currentStatus == ApplicationStatus.WITHDRAWN) {
-
-        throw new RuntimeException(
-                "Application has already been withdrawn"
-        );
+        if (resume == null || resume.isDeleted()) {
+            throw new RuntimeException(
+                    "This application is linked to a deleted resume");
+        }
     }
-
-    if (currentStatus == ApplicationStatus.SELECTED) {
-
-        throw new RuntimeException(
-                "A selected application cannot be withdrawn"
-        );
-    }
-
-    if (currentStatus == ApplicationStatus.REJECTED) {
-
-        throw new RuntimeException(
-                "A rejected application cannot be withdrawn"
-        );
-    }
-
-
-    // --------------------------------------------------------
-    // 4. UPDATE STATUS
-    // --------------------------------------------------------
-
-    application.setStatus(
-            ApplicationStatus.WITHDRAWN
-    );
-
-    application.setUpdatedAt(
-            LocalDateTime.now()
-    );
-
-
-    // --------------------------------------------------------
-    // 5. SAVE
-    // --------------------------------------------------------
-
-    Application updatedApplication =
-            applicationRepository.save(application);
-
-
-    // --------------------------------------------------------
-    // 6. GET JOB TITLE
-    // --------------------------------------------------------
-
-    String jobTitle =
-            application.getJob() != null &&
-            application.getJob().getTitle() != null
-                    ? application.getJob().getTitle()
-                    : "the job";
-
-
-    // --------------------------------------------------------
-    // 7. NOTIFY CANDIDATE
-    // --------------------------------------------------------
-
-    notificationService.createCandidateNotification(
-            candidateEmail,
-            "Application withdrawn",
-            "Your application for "
-                    + jobTitle
-                    + " has been successfully withdrawn.",
-            "APPLICATION_WITHDRAWN"
-    );
-
-
-    // --------------------------------------------------------
-    // 8. NOTIFY RECRUITER / ADMIN
-    // --------------------------------------------------------
-
-    System.out.println(
-            "🔥 ABOUT TO CREATE GLOBAL RECRUITER NOTIFICATION 🔥"
-    );
-
-    notificationService.createNotification(
-            "Application withdrawn",
-            "Candidate "
-                    + candidateEmail
-                    + " has withdrawn their application for "
-                    + jobTitle
-                    + ".",
-            "APPLICATION_WITHDRAWN"
-    );
-
-    System.out.println(
-            "🔥 GLOBAL RECRUITER NOTIFICATION CREATED 🔥"
-    );
-
-
-    // --------------------------------------------------------
-    // 9. LOG
-    // --------------------------------------------------------
-
-    System.out.println(
-            "Application #"
-                    + applicationId
-                    + " withdrawn by "
-                    + candidateEmail
-    );
-
-
-    return updatedApplication;
-}
 }

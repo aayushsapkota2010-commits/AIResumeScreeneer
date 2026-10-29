@@ -43,6 +43,8 @@ What would you like to explore today?`
         Promise.all([api.get(`/resume/${id}`), api.get(`/resume/timeline/${id}`)])
             .then(([resumeResponse, timelineResponse]) => {
                 if (!active) return;
+
+                console.log("Timeline API response:", timelineResponse.data);
                 setResume(resumeResponse.data);
                 setTimeline(Array.isArray(timelineResponse.data) ? timelineResponse.data : []);
                 setError("");
@@ -93,12 +95,59 @@ What would you like to explore today?`
         }
     };
 
-    const openPdf = () => window.open(`${API_URL}/resume/view/${id}`, "_blank", "noopener,noreferrer");
-    const dateLabel = (value) => {
-        if (!value) return "Date unavailable";
-        const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? value : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-    };
+const openPdf = async () => {
+    try {
+        const response = await api.get(`/resume/view/${id}`, {
+            responseType: "blob",
+        });
+
+        const pdfBlob = new Blob([response.data], {
+            type: "application/pdf",
+        });
+
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const newTab = window.open(pdfUrl, "_blank");
+
+        if (!newTab) {
+            const link = document.createElement("a");
+            link.href = pdfUrl;
+            link.download = resume?.fileName || "resume.pdf";
+            link.click();
+        }
+
+        setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+   } catch (error) {
+    console.error("Failed to open resume:", error);
+    console.error("HTTP status:", error.response?.status);
+
+    const data = error.response?.data;
+
+    if (data instanceof Blob) {
+        console.error("Backend error body:", await data.text());
+    } else {
+        console.error("Backend error body:", data);
+    }
+}
+};
+   const dateLabel = (value) => {
+    if (value === null || value === undefined || value === "") {
+        return "Date unavailable";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Date unavailable";
+    }
+
+    return date.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
     const skills = typeof resume?.skills === "string" ? resume.skills.split(",").map((s) => s.trim()).filter(Boolean) : [];
     const ats = Number(resume?.atsScore);
     const match = Math.min(100, Math.max(0, Number(resume?.matchScore) || 0));
@@ -274,7 +323,7 @@ What would you like to explore today?`
                                 <strong>
                                     {item.activity || "Recruitment activity"}
                                 </strong>
-                                <time>{dateLabel(item.createdAt)}</time>
+                               <time>{dateLabel(item.actionTime)}</time>
                             </div>
                         </article>
                     ))}

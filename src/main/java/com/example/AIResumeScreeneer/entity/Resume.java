@@ -46,4 +46,9 @@ private Integer matchScore;
 private Boolean shortlisted;
 @Enumerated(EnumType.STRING)
 private CandidateStatus status;
+
+
+@Column(nullable = false)
+@Builder.Default
+private boolean deleted = false;
 }

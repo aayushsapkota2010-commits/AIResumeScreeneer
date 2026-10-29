@@ -1,3 +1,4 @@
+
 package com.example.AIResumeScreeneer.service;
 
 import org.springframework.stereotype.Service;
@@ -16,24 +17,25 @@ public class PipelineService {
 
     public PipelineResponse getPipelineStats() {
 
+        // Count only active resumes. Do not count soft-deleted records.
         return PipelineResponse.builder()
                 .applied(
-                        resumeRepository.countByStatus(
+                        resumeRepository.countByDeletedFalseAndStatus(
                                 CandidateStatus.APPLIED))
                 .screening(
-                        resumeRepository.countByStatus(
+                        resumeRepository.countByDeletedFalseAndStatus(
                                 CandidateStatus.SCREENING))
                 .shortlisted(
-                        resumeRepository.countByStatus(
+                        resumeRepository.countByDeletedFalseAndStatus(
                                 CandidateStatus.SHORTLISTED))
                 .interview(
-                        resumeRepository.countByStatus(
+                        resumeRepository.countByDeletedFalseAndStatus(
                                 CandidateStatus.INTERVIEW))
                 .selected(
-                        resumeRepository.countByStatus(
+                        resumeRepository.countByDeletedFalseAndStatus(
                                 CandidateStatus.SELECTED))
                 .rejected(
-                        resumeRepository.countByStatus(
+                        resumeRepository.countByDeletedFalseAndStatus(
                                 CandidateStatus.REJECTED))
                 .build();
     }

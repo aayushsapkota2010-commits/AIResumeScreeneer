@@ -1,3 +1,4 @@
+
 package com.example.AIResumeScreeneer.repository;
 
 import java.util.List;
@@ -9,13 +10,11 @@ import com.example.AIResumeScreeneer.entity.Application;
 public interface ApplicationRepository
         extends JpaRepository<Application, Long> {
 
-    List<Application>
-    findByCandidateEmailOrderByAppliedAtDesc(
+    List<Application> findByCandidateEmailOrderByAppliedAtDesc(
             String candidateEmail
     );
 
-    List<Application>
-    findByJobIdOrderByAppliedAtDesc(
+    List<Application> findByJobIdOrderByAppliedAtDesc(
             Long jobId
     );
 
@@ -24,9 +23,29 @@ public interface ApplicationRepository
             Long resumeId
     );
 
-    // NEW
-    List<Application>
-    findAllByOrderByAppliedAtDesc();
+    boolean existsByResumeId(Long resumeId);
 
-    Application findFirstByResumeIdOrderByAppliedAtDesc(Long resumeId);
+    // Fetch all applications, including historical ones.
+    List<Application> findAllByOrderByAppliedAtDesc();
+
+    Application findFirstByResumeIdOrderByAppliedAtDesc(
+            Long resumeId
+    );
+
+    // Fetch applications linked only to active resumes.
+    List<Application> findByResumeDeletedFalseOrderByAppliedAtDesc();
+
+    
+List<Application>
+findByCandidateEmailAndResumeDeletedFalseOrderByAppliedAtDesc(
+        String candidateEmail);
+
+List<Application>
+findByJobIdAndResumeDeletedFalseOrderByAppliedAtDesc(
+        Long jobId);
+
+        
+List<Application> findByResumeIdOrderByAppliedAtDesc(Long resumeId);
+
+
 }
