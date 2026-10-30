@@ -25,54 +25,44 @@ function MoveStageModal({
 
     }, [candidate]);
 
-    const saveStatus = async () => {
+    
+const saveStatus = async () => {
+    if (!candidate?.id) {
+        console.error("No candidate selected:", candidate);
+        return;
+    }
 
-        // Safety check
-        if (!candidate?.id) {
+    try {
+        setSaving(true);
 
-            console.error(
-                "Cannot move stage: candidate is null or has no ID",
-                candidate
-            );
+        const response = await api.put(
+            `/resume/status/${candidate.id}`,
+            { status: status }
+        );
 
-            return;
-        }
+        console.log("Status update response:", response.data);
 
-        try {
+        // Refresh candidate data after the update
+        await onSuccess?.();
 
-            setSaving(true);
+        onClose();
 
-            console.log(
-                "Moving candidate:",
-                candidate.id,
-                "to:",
-                status
-            );
+    } catch (error) {
+        console.error(
+            "Failed to update candidate status:",
+            error.response?.data || error
+        );
 
-            await api.put(
-                `/resume/status/${candidate.id}`,
-                {
-                    status: status
-                }
-            );
+        alert(
+            error.response?.data?.message ||
+            "Failed to update candidate status."
+        );
 
-            onSuccess();
+    } finally {
+        setSaving(false);
+    }
+};
 
-            onClose();
-
-        } catch (error) {
-
-            console.error(
-                "Failed to update candidate status:",
-                error
-            );
-
-        } finally {
-
-            setSaving(false);
-
-        }
-    };
 
     return (
 

@@ -79,7 +79,7 @@ function PipelineBoard() {
         applications.forEach((application) => {
 
             const status =
-                application.status || "APPLIED";
+                (application.status || "APPLIED").toUpperCase();
 
             if (groups[status]) {
                 groups[status].push(application);
@@ -553,8 +553,7 @@ function PipelineBoard() {
 
                                                     <select
                                                         value={
-                                                            application.status ||
-                                                            "APPLIED"
+                                                            (application.status || "APPLIED").toUpperCase()
                                                         }
                                                         disabled={
                                                             updatingId ===

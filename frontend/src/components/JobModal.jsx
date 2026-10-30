@@ -3,54 +3,60 @@ import api from "../api/api";
 import "./JobModal.css";
 
 function JobModal({ isOpen, onClose, onSuccess, job }) {
-    const [form, setForm] = useState({
-        title: "",
-        company: "",
-        location: "",
-        employmentType: "Full Time",
-        experience: "",
-        salary: "",
-        description: "",
-        deadline: "",
-        status: "OPEN"
-    });
+  const [form, setForm] = useState({
+    title: "",
+    company: "",
+    location: "",
+    employmentType: "Full Time",
+    experience: "",
+    salary: "",
+    description: "",
+    deadline: "",
+    status: "OPEN",
+    requiredSkills: []
+});
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+useEffect(() => {
+    if (!isOpen) return;
 
-    useEffect(() => {
-        if (!isOpen) return;
+    setError("");
 
-        setError("");
+    if (job) {
+        setForm({
+            title: job.title || "",
+            company: job.company || "",
+            location: job.location || "",
+            employmentType: job.employmentType || "Full Time",
+            experience: job.experience || "",
+            salary: job.salary || "",
+            description: job.description || "",
+            deadline: job.deadline
+                ? job.deadline.substring(0, 16)
+                : "",
+            status: job.status || "OPEN",
 
-        if (job) {
-            setForm({
-                title: job.title || "",
-                company: job.company || "",
-                location: job.location || "",
-                employmentType: job.employmentType || "Full Time",
-                experience: job.experience || "",
-                salary: job.salary || "",
-                description: job.description || "",
-                deadline: job.deadline
-                    ? job.deadline.substring(0, 16)
-                    : "",
-                status: job.status || "OPEN"
-            });
-        } else {
-            setForm({
-                title: "",
-                company: "",
-                location: "",
-                employmentType: "Full Time",
-                experience: "",
-                salary: "",
-                description: "",
-                deadline: "",
-                status: "OPEN"
-            });
-        }
-    }, [isOpen, job]);
+            // Safely handle required skills
+            requiredSkills: Array.isArray(job?.requiredSkills)
+                ? job.requiredSkills
+                : []
+        });
+    } else {
+        setForm({
+            title: "",
+            company: "",
+            location: "",
+            employmentType: "Full Time",
+            experience: "",
+            salary: "",
+            description: "",
+            deadline: "",
+            status: "OPEN",
+            requiredSkills: []
+        });
+    }
+}, [isOpen, job]);
 
     if (!isOpen) return null;
 
@@ -88,6 +94,7 @@ function JobModal({ isOpen, onClose, onSuccess, job }) {
                 employmentType: form.employmentType,
                 experience: form.experience.trim(),
                 salary: form.salary.trim(),
+                requiredSkills: form.requiredSkills.trim(),
                 description: form.description.trim(),
                 status: form.status,
                 deadline: form.deadline
@@ -182,6 +189,19 @@ function JobModal({ isOpen, onClose, onSuccess, job }) {
                     onChange={handleChange}
                     placeholder="Salary (e.g. ₹6-10 LPA)"
                 />
+
+                <div className="job-form-group">
+    <label htmlFor="requiredSkills">Required Skills</label>
+    <textarea
+        id="requiredSkills"
+        name="requiredSkills"
+        value={form.requiredSkills}
+        onChange={handleChange}
+        placeholder="e.g. Python, Machine Learning, Pandas, NumPy"
+        rows={3}
+    />
+    <small>Separate each skill with a comma.</small>
+</div>
 
                 <select
                     name="employmentType"
