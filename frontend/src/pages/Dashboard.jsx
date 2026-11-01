@@ -13,7 +13,6 @@ import {
     Pie,
     Cell,
     Tooltip,
-    Legend,
     ResponsiveContainer,
     BarChart,
     Bar,
@@ -23,11 +22,13 @@ import {
 } from "recharts";
 
 const PIPELINE_STAGES = [
-    { key: "applied", label: "Applied", color: "#4F46E5" },
-    { key: "shortlisted", label: "Shortlisted", color: "#6366F1" },
-    { key: "interviewed", label: "Interviewed", color: "#D97757" },
-    { key: "selected", label: "Selected", color: "#65A088" },
-    { key: "rejected", label: "Rejected", color: "#94A3B8" }
+    { key: "applied", label: "Applied", color: "#6366F1" },
+    { key: "screening", label: "Screening", color: "#0EA5E9" },
+    { key: "shortlisted", label: "Shortlisted", color: "#8B5CF6" },
+    { key: "interview", label: "Interview", color: "#F59E0B" },
+    { key: "selected", label: "Selected", color: "#10B981" },
+    { key: "rejected", label: "Rejected", color: "#EF4444" },
+    { key: "withdrawn", label: "Withdrawn", color: "#94A3B8" }
 ];
 
 function Dashboard() {
@@ -146,10 +147,14 @@ function Dashboard() {
                                                       .key
                                               ] ?? 0
                                             : null;
+                                    const isExit =
+                                        stage.key === "rejected" ||
+                                        stage.key === "withdrawn";
+
                                     const dropOff =
                                         prevValue &&
                                         prevValue > 0 &&
-                                        stage.key !== "rejected"
+                                        !isExit
                                             ? Math.round(
                                                   ((prevValue - value) /
                                                       prevValue) *
@@ -160,7 +165,7 @@ function Dashboard() {
                                     return (
                                         <div
                                             className={`funnel-step ${
-                                                stage.key === "rejected"
+                                                isExit
                                                     ? "funnel-step--exit"
                                                     : ""
                                             }`}
@@ -206,17 +211,17 @@ function Dashboard() {
                                     </span>
                                 </div>
                                 <div className="dash-chart-body">
-                                    <ResponsiveContainer width="100%" height={360}>
+                                    <ResponsiveContainer width="100%" height={300}>
                                         <PieChart>
                                             <Pie
                                                 data={pieData}
                                                 dataKey="value"
                                                 nameKey="name"
-                                                innerRadius={70}
-                                                outerRadius={120}
+                                                innerRadius={68}
+                                                outerRadius={112}
                                                 paddingAngle={2}
                                             >
-                                                {pieData.map((entry, index) => (
+                                                {pieData.map((entry) => (
                                                     <Cell
                                                         key={entry.name}
                                                         fill={entry.color}
@@ -237,16 +242,31 @@ function Dashboard() {
                                                 }}
                                                 itemStyle={{ padding: 0 }}
                                             />
-                                            <Legend
-                                                iconType="circle"
-                                                iconSize={9}
-                                                wrapperStyle={{
-                                                    fontSize: 13,
-                                                    paddingTop: 18
-                                                }}
-                                            />
                                         </PieChart>
                                     </ResponsiveContainer>
+
+                                    <ul className="dash-pie-legend">
+                                        {pieData.map((entry) => (
+                                            <li
+                                                className="dash-pie-legend-item"
+                                                key={entry.name}
+                                            >
+                                                <span
+                                                    className="dash-pie-legend-dot"
+                                                    style={{
+                                                        backgroundColor:
+                                                            entry.color
+                                                    }}
+                                                />
+                                                <span className="dash-pie-legend-label">
+                                                    {entry.name}
+                                                </span>
+                                                <span className="dash-pie-legend-value">
+                                                    {entry.value}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </div>
 
@@ -267,9 +287,13 @@ function Dashboard() {
                                             />
                                             <XAxis
                                                 dataKey="name"
-                                                tick={{ fontSize: 12, fill: "#6B7280" }}
+                                                tick={{ fontSize: 11, fill: "#6B7280" }}
                                                 axisLine={false}
                                                 tickLine={false}
+                                                interval={0}
+                                                angle={-20}
+                                                textAnchor="end"
+                                                height={58}
                                             />
                                             <YAxis
                                                 tick={{ fontSize: 12, fill: "#6B7280" }}

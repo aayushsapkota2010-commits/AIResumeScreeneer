@@ -429,6 +429,18 @@
     color: var(--cc-primary);
 }
 
+.candidate-dropdown button:disabled,
+.candidate-dropdown button.candidate-dropdown-item--disabled {
+    background: transparent;
+    color: #a0a7b6;
+    cursor: not-allowed;
+}
+
+.candidate-dropdown button:disabled svg,
+.candidate-dropdown button.candidate-dropdown-item--disabled svg {
+    color: #b4bac6;
+}
+
 @keyframes candidateDropdownIn {
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }

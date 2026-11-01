@@ -10,8 +10,10 @@ import lombok.*;
 public class RecruiterDashboardChartResponse {
 
     private long applied;
+    private long screening;
     private long shortlisted;
-    private long interviewed;
+    private long interview;
     private long selected;
     private long rejected;
+    private long withdrawn;
 }

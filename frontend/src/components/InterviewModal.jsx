@@ -108,7 +108,12 @@ console.log("Modal State:", {
 
         console.error(err);
 
-        alert("Operation Failed");
+        const message =
+            err.response?.data?.message ||
+            err.message ||
+            "Operation Failed";
+
+        alert(message);
 
     } finally {
 

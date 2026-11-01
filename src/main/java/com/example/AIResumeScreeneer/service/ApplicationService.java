@@ -79,11 +79,38 @@ public class ApplicationService {
             jobDescription = "";
         }
 
+        // Include the structured job data so matching also works when
+        // the free-text description does not list the skills.
+        StringBuilder matchableJobText =
+                new StringBuilder(jobDescription);
+
+        if (job.getTitle() != null
+                && !job.getTitle().isBlank()) {
+            matchableJobText.append(' ')
+                    .append(job.getTitle());
+        }
+
+        if (job.getRequiredSkills() != null
+                && !job.getRequiredSkills().isBlank()) {
+            matchableJobText.append(' ')
+                    .append(job.getRequiredSkills());
+        }
+
+        String matchableDescription =
+                matchableJobText.toString().trim();
+
         var matchResult = jobMatchingService.matchResume(
-                resumeText, jobDescription);
+                resumeText, matchableDescription);
 
         int atsScore = atsService.calculateScore(resumeText);
         int matchScore = matchResult.getMatchPercentage();
+
+        // Keep the resume in sync with the latest application so the
+        // candidate list, dashboard and resume pages show real scores.
+        resume.setAtsScore(atsScore);
+        resume.setMatchScore(matchScore);
+        resume.setJobDescription(matchableDescription);
+        resumeRepository.save(resume);
 
         LocalDateTime now = LocalDateTime.now();
 

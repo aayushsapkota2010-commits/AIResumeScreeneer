@@ -312,7 +312,9 @@ function ResumeList() {
                                                 </span>
 
                                                 <span className={getScoreClass(matchScore)}>
-                                                    {resume.matchScore ?? 0}%
+                                                    {resume.matchScore != null
+                                                        ? `${resume.matchScore}%`
+                                                        : "-"}
                                                 </span>
 
                                             </div>

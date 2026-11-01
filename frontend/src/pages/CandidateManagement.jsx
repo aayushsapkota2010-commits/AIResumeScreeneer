@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../api/api";
 import { useNavigate } from "react-router-dom";
 import InterviewQuestionModal
@@ -25,6 +25,7 @@ import InterviewModal from "../components/InterviewModal";
 const STATUS_FILTERS = [
     "All",
     "Applied",
+    "Screening",
     "Shortlisted",
     "Interview",
     "Selected",
@@ -37,6 +38,108 @@ const SORT_OPTIONS = [
     { value: "ats-asc", label: "ATS Score: Low to High" },
     { value: "name", label: "Name: A to Z" }
 ];
+
+function buildCandidates(resumes, interviews, applications) {
+
+    const interviewByResume = new Map();
+
+    const latestApplicationByResume = new Map();
+
+    (applications || []).forEach((application) => {
+
+        const resumeId =
+            application?.resume?.id ?? application?.resumeId;
+
+        if (!resumeId) return;
+
+        const current = latestApplicationByResume.get(resumeId);
+
+        const appliedAt = application?.appliedAt
+            ? new Date(application.appliedAt).getTime()
+            : 0;
+
+        const currentAppliedAt = current?.appliedAt
+            ? new Date(current.appliedAt).getTime()
+            : -1;
+
+        if (!current || appliedAt >= currentAppliedAt) {
+            latestApplicationByResume.set(resumeId, application);
+        }
+    });
+
+    (interviews || []).forEach((interview) => {
+
+        const resumeId = interview?.resumeId;
+
+        if (!resumeId) return;
+
+        const current = interviewByResume.get(resumeId);
+
+        const status = (interview.status || "").toUpperCase();
+
+        if (!current) {
+            interviewByResume.set(resumeId, interview);
+            return;
+        }
+
+        const currentStatus =
+            (current.status || "").toUpperCase();
+
+        // Prefer an active interview over cancelled/completed ones
+        if (
+            status === "SCHEDULED" &&
+            currentStatus !== "SCHEDULED"
+        ) {
+            interviewByResume.set(resumeId, interview);
+        }
+    });
+
+    return (resumes || []).map((resume) => {
+
+        const interview =
+            interviewByResume.get(resume.id);
+
+        const application =
+            latestApplicationByResume.get(resume.id);
+
+        return {
+            id: resume.id,
+
+            name: resume.candidateEmail
+                ? resume.candidateEmail.split("@")[0]
+                : (resume.fileName || "Unnamed Candidate")
+                      .replace(".pdf", ""),
+
+            email: resume.candidateEmail || "",
+
+            resumeFileName: resume.fileName,
+
+            atsScore:
+                resume.atsScore ??
+                application?.atsScore ??
+                null,
+
+            matchScore:
+                application?.matchScore ??
+                resume.matchScore ??
+                null,
+
+            status: resume.status,
+
+            uploadDate: resume.uploadedAt,
+
+            skills: resume.skills
+                ? resume.skills.split(",").filter(Boolean)
+                : [],
+
+            resumeId: resume.id,
+
+            interviewId: interview?.id ?? null,
+
+            interviewStatus: interview?.status ?? null
+        };
+    });
+}
 
 
 function CandidateManagement() {
@@ -63,52 +166,45 @@ const [generatedQuestions, setGeneratedQuestions] = useState("");
 
 const [loadingQuestions, setLoadingQuestions] = useState(false);
 
-    useEffect(() => {
-       api.get("/resume/all")
-.then((res) => {
-const mapped = res.data.map((resume) => ({
+    const loadCandidates = useCallback(async () => {
 
-    id: resume.id,
+        const [resumeResponse, interviewResponse, applicationResponse] =
+            await Promise.all([
+                api.get("/resume/all"),
+                api.get("/interview/statuses").catch(() => ({
+                    data: []
+                })),
+                api.get("/applications/pipeline").catch(() => ({
+                    data: []
+                }))
+            ]);
 
-    name: resume.candidateEmail
-        ? resume.candidateEmail.split("@")[0]
-        : resume.fileName.replace(".pdf", ""),
+        setCandidates(
+            buildCandidates(
+                resumeResponse.data,
+                interviewResponse.data,
+                applicationResponse.data
+            )
+        );
 
-    email: resume.candidateEmail || "",
-
-    resumeFileName: resume.fileName,
-
-    atsScore: resume.atsScore,
-
-    matchScore: resume.matchScore,
-
-    status: resume.status,
-
-    uploadDate: resume.uploadedAt,
-
-    skills: resume.skills
-        ? resume.skills.split(",").filter(Boolean)
-        : [],
-
-    resumeId: resume.id
-}));
-
-    setCandidates(mapped);
-
-})
-
-  .catch((err) => {
-
-            console.log(err);
-            setError("Failed to load candidates");
-
-        })
-        .finally(() => {
-
-            setIsLoading(false);
-
-        });
     }, []);
+
+    useEffect(() => {
+
+        loadCandidates()
+            .catch((err) => {
+
+                console.log(err);
+                setError("Failed to load candidates");
+
+            })
+            .finally(() => {
+
+                setIsLoading(false);
+
+            });
+
+    }, [loadCandidates]);
 
     const stats = useMemo(() => {
         const total = candidates.length;
@@ -218,7 +314,47 @@ const handleDownload = () => {
 const handleOpenProfile = (candidate) => {
     setSelectedCandidate(candidate);
 };
-const handleInterviewInvite = (candidate) => {
+const handleInterviewInvite = async (candidate) => {
+
+    try {
+
+        const response = await api.get(
+            `/interview/${candidate.id}`
+        );
+
+        const existing = response.data;
+
+        if (existing) {
+
+            const status =
+                (existing.status || "").toUpperCase();
+
+            if (status === "SCHEDULED") {
+
+                alert(
+                    "An interview is already scheduled for this candidate's resume."
+                );
+
+                return;
+            }
+
+            if (status === "COMPLETED") {
+
+                alert(
+                    "An interview has already been completed for this candidate's resume."
+                );
+
+                return;
+            }
+        }
+
+    } catch (err) {
+
+        console.error(
+            "Failed to check existing interview:",
+            err
+        );
+    }
 
     setSelectedInterviewCandidate(candidate);
 
@@ -412,45 +548,11 @@ const handleInterviewInvite = (candidate) => {
     interview={editingInterview}
     onSuccess={() => {
 
-        api.get("/resume/all")
-            .then((res) => {
+        loadCandidates().catch((err) => {
 
-                const mapped = res.data.map((resume) => ({
+            console.error(err);
 
-                    id: resume.id,
-
-                    name: resume.candidateEmail
-                        ? resume.candidateEmail.split("@")[0]
-                        : resume.fileName.replace(".pdf", ""),
-
-                    email: resume.candidateEmail || "",
-
-                    resumeFileName: resume.fileName,
-
-                    atsScore: resume.atsScore ?? 0,
-
-                    matchScore: resume.matchScore ?? 0,
-
-                    status: resume.status,
-
-                    uploadDate: resume.uploadedAt,
-
-                    skills: resume.skills
-                        ? resume.skills.split(",").filter(Boolean)
-                        : [],
-
-                    resumeId: resume.id
-
-                }));
-
-                setCandidates(mapped);
-
-            })
-            .catch((err) => {
-
-                console.error(err);
-
-            });
+        });
 
     }}
 />
@@ -476,39 +578,11 @@ const handleInterviewInvite = (candidate) => {
     candidate={stageCandidate}
     onSuccess={() => {
 
-        api.get("/resume/all")
+        loadCandidates().catch((err) => {
 
-            .then((res) => {
+            console.error(err);
 
-                const mapped = res.data.map((candidate) => ({
-
-                    id: candidate.id,
-
-                    name: candidate.candidateEmail
-                        ? candidate.candidateEmail.split("@")[0]
-                        : "Unnamed Candidate",
-
-                    email: candidate.candidateEmail || "No Email",
-
-                    resumeFileName: candidate.fileName,
-
-                    atsScore: candidate.atsScore ?? 0,
-
-                    matchScore: candidate.matchScore ?? 0,
-
-                    status: candidate.status,
-
-                    uploadDate: candidate.uploadedAt,
-
-                    skills: candidate.skills
-                        ? candidate.skills.split(",")
-                        : []
-
-                }));
-
-                setCandidates(mapped);
-
-            });
+        });
 
     }}
     

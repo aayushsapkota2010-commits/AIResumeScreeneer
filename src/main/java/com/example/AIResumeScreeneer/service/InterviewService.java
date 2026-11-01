@@ -1,5 +1,6 @@
 package com.example.AIResumeScreeneer.service;
 
+import com.example.AIResumeScreeneer.entity.ApplicationStatus;
 import com.example.AIResumeScreeneer.entity.CandidateStatus;
 import com.example.AIResumeScreeneer.entity.Interview;
 import com.example.AIResumeScreeneer.entity.InterviewStatus;
@@ -8,6 +9,7 @@ import com.example.AIResumeScreeneer.repository.InterviewRepository;
 import com.example.AIResumeScreeneer.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,9 +20,12 @@ public class InterviewService {
 
     private final InterviewRepository interviewRepository;
     private final ResumeRepository resumeRepository;
-private final EmailService emailService;
-private final NotificationService notificationService;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
+    private final ApplicationService applicationService;
+
     // Schedule Interview
+    @Transactional
     public Interview scheduleInterview(
         Long resumeId,
         Interview interview
@@ -31,9 +36,69 @@ private final NotificationService notificationService;
             .orElseThrow(() ->
                     new RuntimeException("Resume not found"));
 
-    interview.setResume(resume);
+    if (resume.isDeleted()) {
+        throw new RuntimeException("Resume not found");
+    }
 
-    interview.setStatus(
+    List<Interview> existingInterviews =
+            interviewRepository
+                    .findByResumeIdOrderByIdAsc(resumeId);
+
+    Interview target;
+
+    if (existingInterviews.isEmpty()) {
+
+        target = interview;
+        target.setResume(resume);
+
+    } else {
+
+        boolean alreadyScheduled =
+                existingInterviews.stream()
+                        .anyMatch(item ->
+                                item.getStatus()
+                                        == InterviewStatus.SCHEDULED);
+
+        if (alreadyScheduled) {
+            throw new RuntimeException(
+                    "An interview is already scheduled for this resume");
+        }
+
+        boolean alreadyCompleted =
+                existingInterviews.stream()
+                        .anyMatch(item ->
+                                item.getStatus()
+                                        == InterviewStatus.COMPLETED);
+
+        if (alreadyCompleted) {
+            throw new RuntimeException(
+                    "An interview has already been completed for this resume");
+        }
+
+        // Only cancelled interviews remain: reschedule the latest one
+        // instead of creating a duplicate record for the same resume.
+        target = existingInterviews.get(
+                existingInterviews.size() - 1
+        );
+
+        target.setInterviewDate(
+                interview.getInterviewDate());
+        target.setInterviewTime(
+                interview.getInterviewTime());
+        target.setInterviewer(
+                interview.getInterviewer());
+        target.setMode(
+                interview.getMode());
+        target.setLocation(
+                interview.getLocation());
+        target.setMeetingLink(
+                interview.getMeetingLink());
+        target.setNotes(
+                interview.getNotes());
+        target.setResume(resume);
+    }
+
+    target.setStatus(
             InterviewStatus.SCHEDULED
     );
 
@@ -44,9 +109,15 @@ private final NotificationService notificationService;
 
     resumeRepository.save(resume);
 
-    // Save interview first
+    // Keep the application pipeline in sync with the resume stage
+    applicationService.updateStatusByResumeId(
+            resumeId,
+            ApplicationStatus.INTERVIEW
+    );
+
+    // Save interview
     Interview savedInterview =
-            interviewRepository.save(interview);
+            interviewRepository.save(target);
 
 
     // ============================================================
@@ -56,12 +127,12 @@ private final NotificationService notificationService;
     emailService.sendInterviewInvitation(
             resume.getCandidateEmail(),
             resume.getCandidateEmail().split("@")[0],
-            interview.getInterviewer(),
-            interview.getInterviewDate().toString(),
-            interview.getInterviewTime().toString(),
-            interview.getMode(),
-            interview.getMeetingLink(),
-            interview.getLocation()
+            savedInterview.getInterviewer(),
+            savedInterview.getInterviewDate().toString(),
+            savedInterview.getInterviewTime().toString(),
+            savedInterview.getMode(),
+            savedInterview.getMeetingLink(),
+            savedInterview.getLocation()
     );
 
 
@@ -76,18 +147,18 @@ private final NotificationService notificationService;
                 resume.getCandidateEmail();
 
         String interviewer =
-                interview.getInterviewer() != null
-                        ? interview.getInterviewer()
+                savedInterview.getInterviewer() != null
+                        ? savedInterview.getInterviewer()
                         : "Recruiter";
 
         String date =
-                interview.getInterviewDate() != null
-                        ? interview.getInterviewDate().toString()
+                savedInterview.getInterviewDate() != null
+                        ? savedInterview.getInterviewDate().toString()
                         : "the scheduled date";
 
         String time =
-                interview.getInterviewTime() != null
-                        ? interview.getInterviewTime().toString()
+                savedInterview.getInterviewTime() != null
+                        ? savedInterview.getInterviewTime().toString()
                         : "the scheduled time";
 
 
@@ -145,9 +216,27 @@ private final NotificationService notificationService;
                 .orElseThrow(() ->
                         new RuntimeException("Resume not found"));
 
-        return interviewRepository
-                .findByResume(resume)
-                .orElse(null);
+        List<Interview> interviews =
+                interviewRepository
+                        .findByResumeIdOrderByIdAsc(
+                                resume.getId()
+                        );
+
+        if (interviews.isEmpty()) {
+            return null;
+        }
+
+        // Prefer the active interview, otherwise return the latest one
+        return interviews.stream()
+                .filter(item ->
+                        item.getStatus()
+                                == InterviewStatus.SCHEDULED)
+                .findFirst()
+                .orElse(
+                        interviews.get(
+                                interviews.size() - 1
+                        )
+                );
     }
 
     // Update Interview
@@ -186,6 +275,7 @@ private final NotificationService notificationService;
     }
 
     // Cancel Interview
+    @Transactional
     public Interview cancelInterview(Long interviewId) {
 
         Interview interview = interviewRepository
@@ -195,7 +285,30 @@ private final NotificationService notificationService;
 
         interview.setStatus(InterviewStatus.CANCELLED);
 
-        return interviewRepository.save(interview);
+        Interview savedInterview =
+                interviewRepository.save(interview);
+
+        // Move the candidate back to the shortlisted stage so the
+        // resume and application pipeline stay consistent.
+        Resume resume = interview.getResume();
+
+        if (resume != null
+                && resume.getStatus()
+                        == CandidateStatus.INTERVIEW) {
+
+            resume.setStatus(
+                    CandidateStatus.SHORTLISTED
+            );
+
+            resumeRepository.save(resume);
+
+            applicationService.updateStatusByResumeId(
+                    resume.getId(),
+                    ApplicationStatus.SHORTLISTED
+            );
+        }
+
+        return savedInterview;
     }
 
     // Upcoming Interviews
@@ -210,6 +323,14 @@ private final NotificationService notificationService;
     public List<Interview> getAllInterviews() {
 
         return interviewRepository.findAll();
+    }
+
+    // Lightweight interview status summary per resume
+    public List<java.util.Map<String, Object>>
+            getInterviewStatusSummaries() {
+
+        return interviewRepository
+                .findInterviewStatusSummaries();
     }
 
     // Get interviews for logged-in candidate only

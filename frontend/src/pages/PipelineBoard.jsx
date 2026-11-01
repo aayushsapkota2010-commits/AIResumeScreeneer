@@ -1,5 +1,120 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+    Users,
+    Clock3,
+    CalendarDays,
+    UserCheck,
+    UserX,
+    Inbox,
+    FileText,
+    Building2,
+    AlertCircle
+} from "lucide-react";
 import api from "../api/api";
+import "./PipelineBoard.css";
+
+const STATUS_META = {
+    APPLIED: {
+        label: "Applied",
+        accent: "#6366f1",
+        soft: "#eef2ff"
+    },
+    SCREENING: {
+        label: "Screening",
+        accent: "#0ea5e9",
+        soft: "#e0f2fe"
+    },
+    SHORTLISTED: {
+        label: "Shortlisted",
+        accent: "#8b5cf6",
+        soft: "#f3e8ff"
+    },
+    INTERVIEW: {
+        label: "Interview",
+        accent: "#f59e0b",
+        soft: "#fef3c7"
+    },
+    SELECTED: {
+        label: "Selected",
+        accent: "#10b981",
+        soft: "#d1fae5"
+    },
+    REJECTED: {
+        label: "Rejected",
+        accent: "#ef4444",
+        soft: "#fee2e2"
+    },
+    WITHDRAWN: {
+        label: "Withdrawn",
+        accent: "#64748b",
+        soft: "#f1f5f9"
+    }
+};
+
+const STATUSES = [
+    "APPLIED",
+    "SCREENING",
+    "SHORTLISTED",
+    "INTERVIEW",
+    "SELECTED",
+    "REJECTED",
+    "WITHDRAWN"
+];
+
+function formatName(email) {
+    if (!email) return "Unknown candidate";
+
+    const local = email.split("@")[0] || "";
+
+    const formatted = local
+        .split(/[._-]+/)
+        .filter(Boolean)
+        .map(
+            (part) =>
+                part.charAt(0).toUpperCase() +
+                part.slice(1)
+        )
+        .join(" ");
+
+    return formatted || local || "Unknown candidate";
+}
+
+function initialsFromEmail(email) {
+    const name = formatName(email);
+    const parts = name.split(" ").filter(Boolean);
+
+    if (parts.length === 0) return "?";
+
+    return (
+        parts[0].charAt(0) +
+        (parts[1] ? parts[1].charAt(0) : "")
+    ).toUpperCase();
+}
+
+function formatDate(value) {
+    if (!value) return null;
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return null;
+
+    return date.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+    });
+}
+
+function scoreClass(score) {
+    const value = Number(score);
+
+    if (!Number.isFinite(value)) return "";
+
+    if (value >= 80) return "pb-score--high";
+    if (value >= 55) return "pb-score--mid";
+
+    return "pb-score--low";
+}
 
 function PipelineBoard() {
 
@@ -7,17 +122,6 @@ function PipelineBoard() {
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState(null);
     const [error, setError] = useState("");
-
-    const statuses = [
-        "APPLIED",
-        "SCREENING",
-        "SHORTLISTED",
-        "INTERVIEW",
-        "SELECTED",
-        "REJECTED",
-        "WITHDRAWN"
-    ];
-
 
     // =========================================================
     // LOAD APPLICATIONS
@@ -72,7 +176,7 @@ function PipelineBoard() {
 
         const groups = {};
 
-        statuses.forEach((status) => {
+        STATUSES.forEach((status) => {
             groups[status] = [];
         });
 
@@ -93,6 +197,30 @@ function PipelineBoard() {
 
 
     // =========================================================
+    // SUMMARY STATS
+    // =========================================================
+
+    const summary = useMemo(() => {
+
+        const count = (status) =>
+            groupedApplications[status]?.length || 0;
+
+        return {
+            total: applications.length,
+            inProgress:
+                count("APPLIED") +
+                count("SCREENING") +
+                count("SHORTLISTED") +
+                count("INTERVIEW"),
+            interview: count("INTERVIEW"),
+            selected: count("SELECTED"),
+            rejected: count("REJECTED") + count("WITHDRAWN")
+        };
+
+    }, [applications, groupedApplications]);
+
+
+    // =========================================================
     // UPDATE APPLICATION STATUS
     // =========================================================
 
@@ -101,8 +229,7 @@ function PipelineBoard() {
         newStatus
     ) => {
 
-        const previousApplications =
-            applications;
+        const previousApplications = applications;
 
 
         // -----------------------------------------------------
@@ -146,9 +273,7 @@ function PipelineBoard() {
             // ROLLBACK
             // -------------------------------------------------
 
-            setApplications(
-                previousApplications
-            );
+            setApplications(previousApplications);
 
             setError(
                 "Failed to update candidate status."
@@ -163,20 +288,73 @@ function PipelineBoard() {
 
 
     // =========================================================
+    // HEADER
+    // =========================================================
+
+    const renderHeader = () => (
+
+        <header className="pb-header">
+
+            <div>
+                <p className="pb-eyebrow">Recruitment</p>
+
+                <h1 className="pb-title">
+                    Recruitment Pipeline
+                </h1>
+
+                <p className="pb-subtitle">
+                    Manage applications through every stage of the
+                    recruitment process.
+                </p>
+            </div>
+
+            <div className="pb-header-meta">
+
+                <span className="pb-live">
+                    <span className="pb-live-dot" />
+                    Live pipeline
+                </span>
+
+                <span className="pb-total-pill">
+                    {applications.length} application
+                    {applications.length === 1 ? "" : "s"}
+                </span>
+
+            </div>
+
+        </header>
+    );
+
+
+    // =========================================================
     // LOADING
     // =========================================================
 
     if (loading) {
 
         return (
-            <div
-                style={{
-                    padding: "32px",
-                    color: "#64748b",
-                    fontSize: "14px"
-                }}
-            >
-                Loading pipeline...
+            <div className="pb-page">
+
+                {renderHeader()}
+
+                <div className="pb-loading">
+
+                    {STATUSES.map((status) => (
+
+                        <div
+                            key={status}
+                            className="pb-skeleton-column"
+                        >
+                            <div className="pb-skeleton-line pb-skeleton-line--short" />
+
+                            <div className="pb-skeleton-card" />
+                            <div className="pb-skeleton-card" />
+                        </div>
+
+                    ))}
+
+                </div>
+
             </div>
         );
 
@@ -189,45 +367,84 @@ function PipelineBoard() {
 
     return (
 
-        <div
-            style={{
-                padding: "28px 32px",
-                width: "100%",
-                boxSizing: "border-box",
-                overflowX: "hidden"
-            }}
-        >
+        <div className="pb-page">
 
-            {/* HEADER */}
+            {renderHeader()}
 
-            <div
-                style={{
-                    marginBottom: "24px"
-                }}
-            >
 
-                <h1
-                    style={{
-                        margin: 0,
-                        fontSize: "26px",
-                        fontWeight: 700,
-                        color: "#111827",
-                        letterSpacing: "-0.5px"
-                    }}
-                >
-                    Recruitment Pipeline
-                </h1>
+            {/* SUMMARY */}
 
-                <p
-                    style={{
-                        margin: "6px 0 0",
-                        color: "#64748b",
-                        fontSize: "14px"
-                    }}
-                >
-                    Manage applications through every
-                    stage of the recruitment process.
-                </p>
+            <div className="pb-stats">
+
+                <div className="pb-stat pb-stat--indigo">
+                    <span className="pb-stat-icon">
+                        <Users size={18} />
+                    </span>
+                    <div className="pb-stat-text">
+                        <span className="pb-stat-value">
+                            {summary.total}
+                        </span>
+                        <span className="pb-stat-label">
+                            Total applications
+                        </span>
+                    </div>
+                </div>
+
+                <div className="pb-stat pb-stat--blue">
+                    <span className="pb-stat-icon">
+                        <Clock3 size={18} />
+                    </span>
+                    <div className="pb-stat-text">
+                        <span className="pb-stat-value">
+                            {summary.inProgress}
+                        </span>
+                        <span className="pb-stat-label">
+                            In progress
+                        </span>
+                    </div>
+                </div>
+
+                <div className="pb-stat pb-stat--amber">
+                    <span className="pb-stat-icon">
+                        <CalendarDays size={18} />
+                    </span>
+                    <div className="pb-stat-text">
+                        <span className="pb-stat-value">
+                            {summary.interview}
+                        </span>
+                        <span className="pb-stat-label">
+                            Interviews
+                        </span>
+                    </div>
+                </div>
+
+                <div className="pb-stat pb-stat--sage">
+                    <span className="pb-stat-icon">
+                        <UserCheck size={18} />
+                    </span>
+                    <div className="pb-stat-text">
+                        <span className="pb-stat-value">
+                            {summary.selected}
+                        </span>
+                        <span className="pb-stat-label">
+                            Selected
+                        </span>
+                    </div>
+                </div>
+
+                <div className="pb-stat pb-stat--rose">
+                    <span className="pb-stat-icon">
+                        <UserX size={18} />
+                    </span>
+                    <div className="pb-stat-text">
+                        <span className="pb-stat-value">
+                            {summary.rejected}
+                        </span>
+                        <span className="pb-stat-label">
+                            Rejected / withdrawn
+                        </span>
+                    </div>
+                </div>
 
             </div>
 
@@ -235,37 +452,20 @@ function PipelineBoard() {
             {/* ERROR */}
 
             {error && (
-
-                <div
-                    style={{
-                        marginBottom: "18px",
-                        padding: "12px 16px",
-                        borderRadius: "10px",
-                        background: "#fef2f2",
-                        border: "1px solid #fecaca",
-                        color: "#b91c1c",
-                        fontSize: "14px"
-                    }}
-                >
-                    {error}
+                <div className="pb-error">
+                    <AlertCircle size={16} />
+                    <span>{error}</span>
                 </div>
-
             )}
 
 
             {/* PIPELINE */}
 
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                        `repeat(${statuses.length}, 1fr)`,
-                    gap: "12px",
-                    alignItems: "start"
-                }}
-            >
+            <div className="pb-board">
 
-                {statuses.map((status) => {
+                {STATUSES.map((status) => {
+
+                    const meta = STATUS_META[status];
 
                     const candidates =
                         groupedApplications[status] || [];
@@ -275,374 +475,245 @@ function PipelineBoard() {
 
                         <div
                             key={status}
+                            className="pb-column"
                             style={{
-                                background: "#f8fafc",
-                                border:
-                                    "1px solid #e2e8f0",
-                                borderRadius: "14px",
-                                minHeight: "360px",
-                                overflow: "hidden"
+                                "--pb-accent": meta.accent,
+                                "--pb-accent-soft": meta.soft
                             }}
                         >
 
                             {/* COLUMN HEADER */}
 
-                            <div
-                                style={{
-                                    padding: "16px",
-                                    background: "#ffffff",
-                                    borderBottom:
-                                        "1px solid #e2e8f0"
-                                }}
-                            >
+                            <div className="pb-column-head">
 
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        justifyContent:
-                                            "space-between",
-                                        alignItems: "center",
-                                        gap: "8px"
-                                    }}
-                                >
+                                <span className="pb-column-title">
+                                    <span className="pb-column-dot" />
+                                    {meta.label}
+                                </span>
 
-                                    <h3
-                                        style={{
-                                            margin: 0,
-                                            fontSize: "13px",
-                                            fontWeight: 700,
-                                            color: "#334155",
-                                            letterSpacing:
-                                                "0.4px"
-                                        }}
-                                    >
-                                        {status}
-                                    </h3>
-
-
-                                    <span
-                                        style={{
-                                            minWidth: "24px",
-                                            height: "24px",
-                                            padding: "0 7px",
-                                            display: "flex",
-                                            alignItems:
-                                                "center",
-                                            justifyContent:
-                                                "center",
-                                            borderRadius:
-                                                "999px",
-                                            background:
-                                                "#eef2ff",
-                                            color:
-                                                "#4f46e5",
-                                            fontSize: "12px",
-                                            fontWeight: 700
-                                        }}
-                                    >
-                                        {candidates.length}
-                                    </span>
-
-                                </div>
+                                <span className="pb-column-count">
+                                    {candidates.length}
+                                </span>
 
                             </div>
 
 
                             {/* CARDS */}
 
-                            <div
-                                style={{
-                                    padding: "12px"
-                                }}
-                            >
+                            <div className="pb-column-body">
 
                                 {candidates.length === 0 ? (
 
-                                    <div
-                                        style={{
-                                            padding:
-                                                "28px 10px",
-                                            textAlign:
-                                                "center",
-                                            color:
-                                                "#94a3b8",
-                                            fontSize:
-                                                "13px"
-                                        }}
-                                    >
-                                        No candidates
+                                    <div className="pb-empty">
+                                        <Inbox size={22} />
+                                        <span>No candidates</span>
                                     </div>
 
                                 ) : (
 
-                                    candidates.map(
-                                        (application) => {
+                                    candidates.map((application) => {
 
-                                            const job =
-                                                application.job;
+                                        const job = application.job;
+                                        const resume = application.resume;
 
-                                            const resume =
-                                                application.resume;
+                                        const appliedOn =
+                                            formatDate(
+                                                application.appliedAt
+                                            );
+
+                                        const isUpdating =
+                                            updatingId ===
+                                            application.id;
 
 
-                                            return (
+                                        return (
 
-                                                <div
-                                                    key={
-                                                        application.id
-                                                    }
-                                                    style={{
-                                                        background:
-                                                            "#ffffff",
-                                                        border:
-                                                            "1px solid #e2e8f0",
-                                                        borderRadius:
-                                                            "10px",
-                                                        padding:
-                                                            "14px",
-                                                        marginBottom:
-                                                            "10px",
-                                                        boxShadow:
-                                                            "0 1px 2px rgba(15, 23, 42, 0.04)"
-                                                    }}
-                                                >
+                                            <article
+                                                key={application.id}
+                                                className="pb-card"
+                                            >
 
-                                                    {/* JOB */}
+                                                {/* IDENTITY */}
+
+                                                <div className="pb-card-identity">
+
+                                                    <div className="pb-avatar">
+                                                        {initialsFromEmail(
+                                                            application.candidateEmail
+                                                        )}
+                                                    </div>
+
+                                                    <div className="pb-card-person">
+
+                                                        <span className="pb-card-name">
+                                                            {formatName(
+                                                                application.candidateEmail
+                                                            )}
+                                                        </span>
+
+                                                        <span
+                                                            className="pb-card-email"
+                                                            title={
+                                                                application.candidateEmail
+                                                            }
+                                                        >
+                                                            {application.candidateEmail ||
+                                                                "No email"}
+                                                        </span>
+
+                                                    </div>
+
+                                                </div>
+
+
+                                                {/* JOB */}
+
+                                                <div className="pb-card-job">
 
                                                     <div
-                                                        style={{
-                                                            fontSize:
-                                                                "14px",
-                                                            fontWeight:
-                                                                600,
-                                                            color:
-                                                                "#1e293b",
-                                                            lineHeight:
-                                                                "20px",
-                                                            marginBottom:
-                                                                "4px"
-                                                        }}
+                                                        className="pb-card-job-title"
+                                                        title={
+                                                            job?.title
+                                                        }
                                                     >
                                                         {job?.title ||
                                                             "Job Application"}
                                                     </div>
 
-
-                                                    {/* COMPANY */}
-
-                                                    <div
-                                                        style={{
-                                                            fontSize:
-                                                                "12px",
-                                                            color:
-                                                                "#64748b",
-                                                            marginBottom:
-                                                                "8px"
-                                                        }}
-                                                    >
-                                                        {job?.company ||
-                                                            "Company"}
-                                                    </div>
-
-
-                                                    {/* CANDIDATE */}
-
-                                                    <div
-                                                        style={{
-                                                            fontSize:
-                                                                "12px",
-                                                            color:
-                                                                "#475569",
-                                                            marginBottom:
-                                                                "8px",
-                                                            overflow:
-                                                                "hidden",
-                                                            textOverflow:
-                                                                "ellipsis",
-                                                            whiteSpace:
-                                                                "nowrap"
-                                                        }}
-                                                        title={
-                                                            application.candidateEmail
-                                                        }
-                                                    >
-                                                        Candidate:{" "}
-                                                        {application.candidateEmail ||
-                                                            "Unknown"}
-                                                    </div>
-
-
-                                                    {/* RESUME */}
-
-                                                    <div
-                                                        style={{
-                                                            fontSize:
-                                                                "12px",
-                                                            color:
-                                                                "#64748b",
-                                                            marginBottom:
-                                                                "10px",
-                                                            overflow:
-                                                                "hidden",
-                                                            textOverflow:
-                                                                "ellipsis",
-                                                            whiteSpace:
-                                                                "nowrap"
-                                                        }}
-                                                        title={
-                                                            resume?.fileName
-                                                        }
-                                                    >
-                                                        Resume:{" "}
-                                                        {resume?.fileName ||
-                                                            "No resume"}
-                                                    </div>
-
-
-                                                    {/* SCORES */}
-
-                                                    <div
-                                                        style={{
-                                                            display:
-                                                                "flex",
-                                                            gap:
-                                                                "10px",
-                                                            marginBottom:
-                                                                "12px",
-                                                            fontSize:
-                                                                "12px"
-                                                        }}
-                                                    >
-
-                                                        <span
-                                                            style={{
-                                                                color:
-                                                                    "#475569"
-                                                            }}
-                                                        >
-                                                            ATS:{" "}
-                                                            <strong>
-                                                                {application.atsScore ??
-                                                                    "N/A"}
-                                                            </strong>
+                                                    <div className="pb-card-company">
+                                                        <Building2 size={11} />
+                                                        <span>
+                                                            {job?.company ||
+                                                                "Company"}
                                                         </span>
-
-
-                                                        <span
-                                                            style={{
-                                                                color:
-                                                                    "#475569"
-                                                            }}
-                                                        >
-                                                            Match:{" "}
-                                                            <strong>
-                                                                {application.matchScore ??
-                                                                    "N/A"}
-                                                                {application.matchScore !=
-                                                                    null
-                                                                    ? "%"
-                                                                    : ""}
-                                                            </strong>
-                                                        </span>
-
                                                     </div>
-
-
-                                                    {/* STATUS */}
-
-                                                    <select
-                                                        value={
-                                                            (application.status || "APPLIED").toUpperCase()
-                                                        }
-                                                        disabled={
-                                                            updatingId ===
-                                                            application.id
-                                                        }
-                                                        onChange={(
-                                                            event
-                                                        ) =>
-                                                            updateStatus(
-                                                                application.id,
-                                                                event
-                                                                    .target
-                                                                    .value
-                                                            )
-                                                        }
-                                                        style={{
-                                                            width:
-                                                                "100%",
-                                                            height:
-                                                                "34px",
-                                                            padding:
-                                                                "0 9px",
-                                                            border:
-                                                                "1px solid #cbd5e1",
-                                                            borderRadius:
-                                                                "7px",
-                                                            background:
-                                                                "#ffffff",
-                                                            color:
-                                                                "#334155",
-                                                            fontSize:
-                                                                "12px",
-                                                            cursor:
-                                                                updatingId ===
-                                                                application.id
-                                                                    ? "wait"
-                                                                    : "pointer",
-                                                            outline:
-                                                                "none"
-                                                        }}
-                                                    >
-
-                                                        {statuses.map(
-                                                            (
-                                                                option
-                                                            ) => (
-
-                                                                <option
-                                                                    key={
-                                                                        option
-                                                                    }
-                                                                    value={
-                                                                        option
-                                                                    }
-                                                                >
-                                                                    {
-                                                                        option
-                                                                    }
-                                                                </option>
-
-                                                            )
-                                                        )}
-
-                                                    </select>
-
-
-                                                    {updatingId ===
-                                                        application.id && (
-
-                                                        <div
-                                                            style={{
-                                                                marginTop:
-                                                                    "7px",
-                                                                fontSize:
-                                                                    "11px",
-                                                                color:
-                                                                    "#64748b"
-                                                            }}
-                                                        >
-                                                            Updating...
-                                                        </div>
-
-                                                    )}
 
                                                 </div>
 
-                                            );
 
-                                        }
-                                    )
+                                                {/* RESUME */}
+
+                                                <div
+                                                    className="pb-card-resume"
+                                                    title={
+                                                        resume?.fileName
+                                                    }
+                                                >
+                                                    <FileText size={11} />
+                                                    <span>
+                                                        {resume?.fileName ||
+                                                            "No resume"}
+                                                    </span>
+                                                </div>
+
+
+                                                {/* SCORES */}
+
+                                                <div className="pb-scores">
+
+                                                    <div
+                                                        className={`pb-score ${scoreClass(
+                                                            application.atsScore
+                                                        )}`}
+                                                    >
+                                                        <span className="pb-score-label">
+                                                            ATS
+                                                        </span>
+                                                        <span className="pb-score-value">
+                                                            {application.atsScore ??
+                                                                "N/A"}
+                                                            {application.atsScore !=
+                                                                null && (
+                                                                <small>
+                                                                    /100
+                                                                </small>
+                                                            )}
+                                                        </span>
+                                                    </div>
+
+                                                    <div
+                                                        className={`pb-score ${scoreClass(
+                                                            application.matchScore
+                                                        )}`}
+                                                    >
+                                                        <span className="pb-score-label">
+                                                            Match
+                                                        </span>
+                                                        <span className="pb-score-value">
+                                                            {application.matchScore ??
+                                                                "N/A"}
+                                                            {application.matchScore !=
+                                                                null && (
+                                                                <small>
+                                                                    %
+                                                                </small>
+                                                            )}
+                                                        </span>
+                                                    </div>
+
+                                                </div>
+
+
+                                                {/* APPLIED DATE */}
+
+                                                {appliedOn && (
+                                                    <div className="pb-card-date">
+                                                        <CalendarDays size={11} />
+                                                        <span>
+                                                            Applied {appliedOn}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+
+                                                {/* STATUS */}
+
+                                                <select
+                                                    className="pb-status-select"
+                                                    value={
+                                                        (application.status ||
+                                                            "APPLIED"
+                                                        ).toUpperCase()
+                                                    }
+                                                    disabled={isUpdating}
+                                                    onChange={(event) =>
+                                                        updateStatus(
+                                                            application.id,
+                                                            event.target.value
+                                                        )
+                                                    }
+                                                >
+
+                                                    {STATUSES.map(
+                                                        (option) => (
+                                                            <option
+                                                                key={option}
+                                                                value={option}
+                                                            >
+                                                                {
+                                                                    STATUS_META[
+                                                                        option
+                                                                    ].label
+                                                                }
+                                                            </option>
+                                                        )
+                                                    )}
+
+                                                </select>
+
+
+                                                {isUpdating && (
+                                                    <div className="pb-updating">
+                                                        <span className="pb-spinner" />
+                                                        Updating status…
+                                                    </div>
+                                                )}
+
+                                            </article>
+
+                                        );
+
+                                    })
 
                                 )}
 

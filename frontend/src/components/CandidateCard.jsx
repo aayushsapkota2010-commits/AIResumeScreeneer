@@ -26,6 +26,9 @@ function getInitials(name) {
 }
 
 function scoreTier(score) {
+    if (score === null || score === undefined || score === "") {
+        return "score-unknown";
+    }
     const value = Number(score);
     if (!Number.isFinite(value)) return "score-unknown";
     if (value >= 80) return "score-high";
@@ -82,8 +85,25 @@ function CandidateCard({
         matchScore,
         status,
         skills,
-        uploadDate
+        uploadDate,
+        interviewStatus
     } = data;
+
+    const normalizedInterviewStatus =
+        (interviewStatus || "").toUpperCase();
+
+    const interviewLocked =
+        normalizedInterviewStatus === "SCHEDULED" ||
+        normalizedInterviewStatus === "COMPLETED";
+
+    const interviewActionLabel =
+        normalizedInterviewStatus === "SCHEDULED"
+            ? "Interview already scheduled"
+            : normalizedInterviewStatus === "COMPLETED"
+              ? "Interview completed"
+              : normalizedInterviewStatus === "CANCELLED"
+                ? "Reschedule interview"
+                : "Schedule interview";
 
     const skillList = Array.isArray(skills)
         ? skills.filter(
@@ -189,10 +209,24 @@ function CandidateCard({
                 <button
                     type="button"
                     role="menuitem"
-                    onClick={() => handleMenuAction(onInterviewInvite)}
+                    className={
+                        interviewLocked
+                            ? "candidate-dropdown-item--disabled"
+                            : ""
+                    }
+                    disabled={interviewLocked}
+                    title={
+                        interviewLocked
+                            ? "Cancel the existing interview before scheduling a new one"
+                            : undefined
+                    }
+                    onClick={() => {
+                        if (interviewLocked) return;
+                        handleMenuAction(onInterviewInvite);
+                    }}
                 >
                     <CalendarDays size={16} />
-                    <span>Schedule interview</span>
+                    <span>{interviewActionLabel}</span>
                 </button>
             </div>,
             document.body

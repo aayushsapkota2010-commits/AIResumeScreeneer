@@ -116,7 +116,7 @@ function Users() {
                 <div>
 
                     <p className="users-eyebrow">
-                        ADMINISTRATION
+                     ADMINISTRATION
                     </p>
 
                     <h1>

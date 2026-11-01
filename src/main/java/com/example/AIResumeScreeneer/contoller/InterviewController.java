@@ -3,10 +3,13 @@ package com.example.AIResumeScreeneer.contoller;
 import com.example.AIResumeScreeneer.entity.Interview;
 import com.example.AIResumeScreeneer.service.InterviewService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/interview")
@@ -18,17 +21,33 @@ public class InterviewController {
 
     // Schedule Interview
     @PostMapping("/schedule/{resumeId}")
-    public Interview scheduleInterview(
+    public ResponseEntity<?> scheduleInterview(
 
             @PathVariable Long resumeId,
 
             @RequestBody Interview interview
     ) {
 
-        return interviewService.scheduleInterview(
-                resumeId,
-                interview
-        );
+        try {
+
+            return ResponseEntity.ok(
+                    interviewService.scheduleInterview(
+                            resumeId,
+                            interview
+                    )
+            );
+
+        } catch (RuntimeException error) {
+
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(
+                            Map.of(
+                                    "message",
+                                    error.getMessage()
+                            )
+                    );
+        }
     }
 
     // Get Interview by Resume
@@ -97,6 +116,13 @@ public List<Interview> getMyInterviews(
     public List<Interview> getAllInterviews() {
 
         return interviewService.getAllInterviews();
+    }
+
+    // Lightweight interview status per resume
+    @GetMapping("/statuses")
+    public List<Map<String, Object>> getInterviewStatuses() {
+
+        return interviewService.getInterviewStatusSummaries();
     }
     @GetMapping("/today")
 public List<Interview> getTodayInterviews() {

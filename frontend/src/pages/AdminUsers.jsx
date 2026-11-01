@@ -1,12 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+    Search,
+    ShieldCheck,
+    UserRound,
+    Users as UsersIcon,
+    RefreshCw,
+    Inbox,
+    AlertCircle,
+    Loader2
+} from "lucide-react";
 import api from "../api/api";
 import "./AdminUsers.css";
+
+function getInitials(user) {
+    const source = user.fullName || user.email || "?";
+
+    const parts = source
+        .split(/[\s@._-]+/)
+        .filter(Boolean);
+
+    if (parts.length === 0) return "?";
+
+    return (
+        parts[0].charAt(0) +
+        (parts[1] ? parts[1].charAt(0) : "")
+    ).toUpperCase();
+}
 
 function AdminUsers() {
 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [updatingId, setUpdatingId] = useState(null);
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const [roleFilter, setRoleFilter] = useState("ALL");
 
     // ==========================================
     // LOAD ALL USERS
@@ -16,32 +45,19 @@ function AdminUsers() {
 
         try {
 
-            setLoading(true);
-            setError("");
-
             const response = await api.get("/admin/users");
 
-            console.log("Users received:", response.data);
+            setUsers(
+                Array.isArray(response.data)
+                    ? response.data
+                    : []
+            );
 
-            setUsers(response.data);
+            setError("");
 
         } catch (err) {
 
             console.error("Failed to load users:", err);
-
-            if (err.response) {
-
-                console.error(
-                    "Status:",
-                    err.response.status
-                );
-
-                console.error(
-                    "Response:",
-                    err.response.data
-                );
-
-            }
 
             setError("Failed to load users.");
 
@@ -52,14 +68,47 @@ function AdminUsers() {
         }
     };
 
-
-    // ==========================================
-    // LOAD USERS WHEN PAGE OPENS
-    // ==========================================
-
     useEffect(() => {
 
-        loadUsers();
+        let active = true;
+
+        api.get("/admin/users")
+            .then((response) => {
+
+                if (!active) return;
+
+                setUsers(
+                    Array.isArray(response.data)
+                        ? response.data
+                        : []
+                );
+
+                setError("");
+
+            })
+            .catch((err) => {
+
+                if (!active) return;
+
+                console.error(
+                    "Failed to load users:",
+                    err
+                );
+
+                setError("Failed to load users.");
+
+            })
+            .finally(() => {
+
+                if (!active) return;
+
+                setLoading(false);
+
+            });
+
+        return () => {
+            active = false;
+        };
 
     }, []);
 
@@ -72,29 +121,12 @@ function AdminUsers() {
 
         try {
 
-            console.log(
-                "Updating user:",
-                id,
-                "to role:",
-                role
-            );
+            setUpdatingId(id);
 
-            const response = await api.put(
-
+            await api.put(
                 `/admin/users/${id}/role`,
-
-                {
-                    role: role
-                }
-
+                { role }
             );
-
-            console.log(
-                "Role update response:",
-                response.data
-            );
-
-            // Reload users after successful update
 
             await loadUsers();
 
@@ -104,31 +136,58 @@ function AdminUsers() {
 
         } catch (err) {
 
-            console.error(
-                "Failed to update role:",
-                err
-            );
+            console.error("Failed to update role:", err);
 
-            if (err.response) {
+            alert("Failed to update user role.");
 
-                console.error(
-                    "Status:",
-                    err.response.status
-                );
+        } finally {
 
-                console.error(
-                    "Response:",
-                    err.response.data
-                );
-
-            }
-
-            alert(
-                "Failed to update user role."
-            );
+            setUpdatingId(null);
 
         }
     };
+
+
+    // ==========================================
+    // DERIVED DATA
+    // ==========================================
+
+    const stats = useMemo(() => {
+
+        const admins = users.filter(
+            (user) => user.role === "ADMIN"
+        ).length;
+
+        return {
+            total: users.length,
+            admins,
+            candidates: users.length - admins
+        };
+
+    }, [users]);
+
+    const filteredUsers = useMemo(() => {
+
+        const query = searchTerm.trim().toLowerCase();
+
+        return users.filter((user) => {
+
+            const matchesRole =
+                roleFilter === "ALL" ||
+                (user.role || "").toUpperCase() === roleFilter;
+
+            if (!matchesRole) return false;
+
+            if (!query) return true;
+
+            return (
+                user.fullName?.toLowerCase().includes(query) ||
+                user.email?.toLowerCase().includes(query) ||
+                user.role?.toLowerCase().includes(query)
+            );
+        });
+
+    }, [users, searchTerm, roleFilter]);
 
 
     // ==========================================
@@ -138,21 +197,39 @@ function AdminUsers() {
     if (loading) {
 
         return (
+            <div className="au-page">
 
-            <div className="admin-users-page">
+                <header className="au-header">
 
-                <h1>
-                    User Management
-                </h1>
+                    <div>
+                        <p className="au-eyebrow">Administration</p>
+                        <h1 className="au-title">User Management</h1>
+                        <p className="au-subtitle">
+                            Manage registered users and their access
+                            levels.
+                        </p>
+                    </div>
 
-                <p>
-                    Loading users...
-                </p>
+                </header>
+
+                <div className="au-panel">
+
+                    <div className="au-skeleton-toolbar">
+                        <div className="au-skeleton-line" />
+                        <div className="au-skeleton-line au-skeleton-line--short" />
+                    </div>
+
+                    {[0, 1, 2, 3, 4].map((row) => (
+                        <div
+                            key={row}
+                            className="au-skeleton-row"
+                        />
+                    ))}
+
+                </div>
 
             </div>
-
         );
-
     }
 
 
@@ -163,27 +240,40 @@ function AdminUsers() {
     if (error) {
 
         return (
+            <div className="au-page">
 
-            <div className="admin-users-page">
+                <header className="au-header">
 
-                <h1>
-                    User Management
-                </h1>
+                    <div>
+                        <p className="au-eyebrow">Administration</p>
+                        <h1 className="au-title">User Management</h1>
+                    </div>
 
-                <p className="error-message">
-                    {error}
-                </p>
+                </header>
 
-                <button
-                    onClick={loadUsers}
-                >
-                    Retry
-                </button>
+                <div className="au-error-card">
+
+                    <span className="au-error-icon">
+                        <AlertCircle size={22} />
+                    </span>
+
+                    <h2>Something went wrong</h2>
+
+                    <p>{error}</p>
+
+                    <button
+                        type="button"
+                        className="au-retry"
+                        onClick={loadUsers}
+                    >
+                        <RefreshCw size={15} />
+                        Retry
+                    </button>
+
+                </div>
 
             </div>
-
         );
-
     }
 
 
@@ -193,160 +283,291 @@ function AdminUsers() {
 
     return (
 
-        <div className="admin-users-page">
+        <div className="au-page">
 
-            <div className="admin-users-header">
+            <header className="au-header">
 
-                <div>
+                <div className="au-header-text">
 
-                    <p className="eyebrow">
-                        ADMINISTRATION
-                    </p>
+                    <p className="au-eyebrow">Administration</p>
 
-                    <h1>
-                        User Management
-                    </h1>
+                    <h1 className="au-title">User Management</h1>
 
-                    <p>
-                        Manage registered users and their roles.
+                    <p className="au-subtitle">
+                        Manage registered users, review their access
+                        level and promote trusted teammates.
                     </p>
 
                 </div>
 
-                <div className="user-count">
+                <button
+                    type="button"
+                    className="au-refresh"
+                    onClick={loadUsers}
+                >
+                    <RefreshCw size={15} />
+                    Refresh
+                </button>
 
-                    {users.length} Users
+            </header>
 
+
+            {/* STATS */}
+
+            <div className="au-stats">
+
+                <div className="au-stat au-stat--indigo">
+                    <span className="au-stat-icon">
+                        <UsersIcon size={18} />
+                    </span>
+                    <div className="au-stat-text">
+                        <span className="au-stat-value">
+                            {stats.total}
+                        </span>
+                        <span className="au-stat-label">
+                            Total users
+                        </span>
+                    </div>
+                </div>
+
+                <div className="au-stat au-stat--violet">
+                    <span className="au-stat-icon">
+                        <ShieldCheck size={18} />
+                    </span>
+                    <div className="au-stat-text">
+                        <span className="au-stat-value">
+                            {stats.admins}
+                        </span>
+                        <span className="au-stat-label">
+                            Administrators
+                        </span>
+                    </div>
+                </div>
+
+                <div className="au-stat au-stat--sage">
+                    <span className="au-stat-icon">
+                        <UserRound size={18} />
+                    </span>
+                    <div className="au-stat-text">
+                        <span className="au-stat-value">
+                            {stats.candidates}
+                        </span>
+                        <span className="au-stat-label">
+                            Candidates
+                        </span>
+                    </div>
                 </div>
 
             </div>
 
 
-            <div className="users-table-container">
+            {/* PANEL */}
 
-                <table className="users-table">
+            <div className="au-panel">
 
-                    <thead>
+                <div className="au-toolbar">
 
-                        <tr>
+                    <div className="au-search">
 
-                            <th>
-                                ID
-                            </th>
+                        <Search
+                            size={16}
+                            className="au-search-icon"
+                        />
 
-                            <th>
-                                Name
-                            </th>
+                        <input
+                            type="text"
+                            placeholder="Search by name, email or role..."
+                            value={searchTerm}
+                            onChange={(event) =>
+                                setSearchTerm(event.target.value)
+                            }
+                        />
 
-                            <th>
-                                Email
-                            </th>
+                    </div>
 
-                            <th>
-                                Role
-                            </th>
+                    <div className="au-toolbar-right">
 
-                            <th>
-                                Action
-                            </th>
+                        <span className="au-result-count">
+                            {filteredUsers.length} of {users.length} users
+                        </span>
 
-                        </tr>
+                        <select
+                            className="au-role-filter"
+                            value={roleFilter}
+                            onChange={(event) =>
+                                setRoleFilter(event.target.value)
+                            }
+                        >
+                            <option value="ALL">All roles</option>
+                            <option value="ADMIN">Admins</option>
+                            <option value="USER">Candidates</option>
+                        </select>
 
-                    </thead>
+                    </div>
 
-
-                    <tbody>
-
-                        {users.map((user) => (
-
-                            <tr
-                                key={user.id}
-                            >
-
-                                <td>
-                                    {user.id}
-                                </td>
-
-
-                                <td>
-                                    {user.fullName}
-                                </td>
+                </div>
 
 
-                                <td>
-                                    {user.email}
-                                </td>
+                {filteredUsers.length === 0 ? (
 
+                    <div className="au-empty">
 
-                                <td>
+                        <span className="au-empty-icon">
+                            <Inbox size={24} />
+                        </span>
 
-                                    <span
-                                        className={
-                                            user.role === "ADMIN"
-                                                ? "role-admin"
-                                                : "role-user"
-                                        }
-                                    >
+                        <h3>No users found</h3>
 
-                                        {user.role}
+                        <p>
+                            Try adjusting your search or role filter.
+                        </p>
 
-                                    </span>
+                    </div>
 
-                                </td>
+                ) : (
 
+                    <div className="au-table-wrap">
 
-                                <td>
+                        <table className="au-table">
 
-                                    {user.role === "USER" ? (
+                            <thead>
 
-                                        <button
-                                            className="action-button"
-                                            onClick={() =>
-                                                updateRole(
-                                                    user.id,
-                                                    "ADMIN"
-                                                )
-                                            }
-                                        >
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th className="au-th-right">
+                                        Actions
+                                    </th>
+                                </tr>
 
-                                            Make Admin
+                            </thead>
 
-                                        </button>
+                            <tbody>
 
-                                    ) : (
+                                {filteredUsers.map((user) => {
 
-                                        <button
-                                            className="action-button"
-                                            onClick={() =>
-                                                updateRole(
-                                                    user.id,
-                                                    "USER"
-                                                )
-                                            }
-                                        >
+                                    const isAdmin =
+                                        user.role === "ADMIN";
 
-                                            Make User
+                                    const isUpdating =
+                                        updatingId === user.id;
 
-                                        </button>
+                                    return (
 
-                                    )}
+                                        <tr key={user.id}>
 
-                                </td>
+                                            <td>
 
-                            </tr>
+                                                <div className="au-user-cell">
 
-                        ))}
+                                                    <div
+                                                        className={`au-avatar ${
+                                                            isAdmin
+                                                                ? "au-avatar--admin"
+                                                                : "au-avatar--user"
+                                                        }`}
+                                                    >
+                                                        {getInitials(user)}
+                                                    </div>
 
-                    </tbody>
+                                                    <div className="au-user-meta">
 
-                </table>
+                                                        <span className="au-user-name">
+                                                            {user.fullName ||
+                                                                "Unnamed user"}
+                                                        </span>
 
+                                                        <span className="au-user-id">
+                                                            ID #{user.id}
+                                                        </span>
 
-                {users.length === 0 && (
+                                                    </div>
 
-                    <div className="empty-users">
+                                                </div>
 
-                        No users found.
+                                            </td>
+
+                                            <td>
+
+                                                <span
+                                                    className="au-email"
+                                                    title={user.email}
+                                                >
+                                                    {user.email || "—"}
+                                                </span>
+
+                                            </td>
+
+                                            <td>
+
+                                                <span
+                                                    className={`au-role ${
+                                                        isAdmin
+                                                            ? "au-role--admin"
+                                                            : "au-role--user"
+                                                    }`}
+                                                >
+                                                    {isAdmin ? (
+                                                        <ShieldCheck size={12} />
+                                                    ) : (
+                                                        <UserRound size={12} />
+                                                    )}
+                                                    {user.role}
+                                                </span>
+
+                                            </td>
+
+                                            <td className="au-td-right">
+
+                                                <button
+                                                    type="button"
+                                                    className={`au-action ${
+                                                        isAdmin
+                                                            ? "au-action--demote"
+                                                            : "au-action--promote"
+                                                    }`}
+                                                    disabled={isUpdating}
+                                                    onClick={() =>
+                                                        updateRole(
+                                                            user.id,
+                                                            isAdmin
+                                                                ? "USER"
+                                                                : "ADMIN"
+                                                        )
+                                                    }
+                                                >
+
+                                                    {isUpdating ? (
+                                                        <Loader2
+                                                            size={14}
+                                                            className="au-spin"
+                                                        />
+                                                    ) : isAdmin ? (
+                                                        <UserRound size={14} />
+                                                    ) : (
+                                                        <ShieldCheck size={14} />
+                                                    )}
+
+                                                    {isUpdating
+                                                        ? "Updating..."
+                                                        : isAdmin
+                                                          ? "Make user"
+                                                          : "Make admin"}
+
+                                                </button>
+
+                                            </td>
+
+                                        </tr>
+
+                                    );
+
+                                })}
+
+                            </tbody>
+
+                        </table>
 
                     </div>
 
@@ -357,7 +578,6 @@ function AdminUsers() {
         </div>
 
     );
-
 }
 
 export default AdminUsers;
