@@ -380,9 +380,9 @@ public Resume updateStatus(
     CandidateStatus oldStatus =
             resume.getStatus();
 
-    CandidateStatus status =
-            CandidateStatus.valueOf(
-                    request.getStatus());
+ CandidateStatus status =
+        CandidateStatus.valueOf(
+                request.getStatus().trim().toUpperCase());
 
     resume.setStatus(status);
 

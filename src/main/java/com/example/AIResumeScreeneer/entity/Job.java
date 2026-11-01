@@ -35,6 +35,9 @@ public class Job {
 
     private String salary;
 
+    @Column(length = 1000)
+private String requiredSkills;
+
     private LocalDateTime deadline;
 
     @Column(nullable = false)

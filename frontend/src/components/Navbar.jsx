@@ -7,12 +7,80 @@ import {
     ChevronDown,
     User,
     Settings as SettingsIcon,
-    LogOut
+    LogOut,
+    CheckCheck,
+    CalendarDays,
+    BriefcaseBusiness,
+    UserCheck,
+    Sparkles,
+    BellRing,
+    Clock3,
+    Loader2
 } from "lucide-react";
 import { Client } from "@stomp/stompjs";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import "./Navbar.css";
+
+function getNotificationIcon(type = "") {
+    const normalized = type.toUpperCase();
+
+    if (normalized.includes("INTERVIEW")) {
+        return CalendarDays;
+    }
+
+    if (normalized.includes("APPLICATION_STATUS")) {
+        return UserCheck;
+    }
+
+    if (normalized.includes("APPLICATION")) {
+        return BriefcaseBusiness;
+    }
+
+    if (normalized.includes("AI")) {
+        return Sparkles;
+    }
+
+    return BellRing;
+}
+
+function getRelativeTime(date) {
+    if (!date) return "";
+
+    const timestamp = new Date(date).getTime();
+
+    if (Number.isNaN(timestamp)) return "";
+
+    const seconds = Math.max(
+        0,
+        Math.floor((Date.now() - timestamp) / 1000)
+    );
+
+    if (seconds < 60) return "Just now";
+
+    const minutes = Math.floor(seconds / 60);
+
+    if (minutes < 60) {
+        return `${minutes} min ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) {
+        return `${hours} hr ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+
+    if (days < 7) {
+        return `${days} day${days > 1 ? "s" : ""} ago`;
+    }
+
+    return new Date(date).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short"
+    });
+}
 
 function Navbar() {
     const navigate = useNavigate();
@@ -25,6 +93,8 @@ function Navbar() {
 
     const [notifOpen, setNotifOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
+
+    const [markingRead, setMarkingRead] = useState(false);
 
     const [userName, setUserName] = useState(
         localStorage.getItem("name") || ""
@@ -646,39 +716,77 @@ function Navbar() {
     };
 
     // ============================================================
+    // REFRESH NOTIFICATIONS (keeps badge count current)
+    // ============================================================
+
+    const refreshNotifications = async () => {
+        try {
+            const response = await api.get("/notifications");
+
+            setNotifications((previous) => {
+                const notificationMap = new Map();
+
+                previous.forEach((notification) => {
+                    if (notification.id) {
+                        notificationMap.set(
+                            notification.id,
+                            notification
+                        );
+                    }
+                });
+
+                (response.data || []).forEach((notification) => {
+                    if (notification.id) {
+                        notificationMap.set(
+                            notification.id,
+                            notification
+                        );
+                    }
+                });
+
+                return Array.from(
+                    notificationMap.values()
+                ).sort(
+                    (a, b) =>
+                        new Date(b.createdAt || 0) -
+                        new Date(a.createdAt || 0)
+                );
+            });
+        } catch (error) {
+            console.error(
+                "Failed to refresh notifications:",
+                error
+            );
+        }
+    };
+
+    // ============================================================
     // MARK ALL READ
     // ============================================================
 
-    const handleMarkAllRead =
-        async () => {
+const handleMarkAllRead = async () => {
+    if (markingRead || unreadCount === 0) return;
 
-            try {
+    try {
+        setMarkingRead(true);
 
-                await api.put(
-                    "/notifications/read-all"
-                );
+        await api.put("/notifications/read-all");
 
-                setNotifications(
-                    (previous) =>
-                        previous.map(
-                            (notification) => ({
-                                ...notification,
-                                read: true
-                            })
-                        )
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Failed to mark notifications as read:",
-                    error
-                );
-
-            }
-
-        };
-
+        setNotifications((previous) =>
+            previous.map((notification) => ({
+                ...notification,
+                read: true
+            }))
+        );
+    } catch (error) {
+        console.error(
+            "Failed to mark notifications as read:",
+            error
+        );
+    } finally {
+        setMarkingRead(false);
+    }
+};
     // ============================================================
     // UI
     // ============================================================
@@ -747,14 +855,20 @@ function Navbar() {
                         aria-label="Notifications"
                         onClick={() => {
 
+                            const willOpen =
+                                !notifOpen;
+
                             setNotifOpen(
-                                (prev) =>
-                                    !prev
+                                willOpen
                             );
 
                             setProfileOpen(
                                 false
                             );
+
+                            if (willOpen) {
+                                refreshNotifications();
+                            }
 
                         }}
                     >
@@ -776,108 +890,111 @@ function Navbar() {
 
                     {notifOpen && (
 
-                        <div className="navbar-dropdown navbar-dropdown--notif">
+                        
+<div className="navbar-dropdown navbar-dropdown--notif">
 
-                            <div className="navbar-dropdown-header">
+    <div className="notif-panel-header">
+        <div className="notif-heading">
+            <div className="notif-heading-icon">
+                <Bell size={18} />
+            </div>
 
-                                <span>
-                                    Notifications
-                                </span>
+            <div>
+                <h3>Notifications</h3>
+                <p>
+                    {unreadCount > 0
+                        ? `${unreadCount} unread updates`
+                        : "You're all caught up"}
+                </p>
+            </div>
+        </div>
 
-                                {unreadCount >
-                                    0 && (
+        {unreadCount > 0 && (
+            <button
+                type="button"
+                className="notif-mark-read"
+                onClick={handleMarkAllRead}
+                disabled={markingRead}
+            >
+                {markingRead ? (
+                    <Loader2 size={14} className="notif-spin" />
+                ) : (
+                    <CheckCheck size={14} />
+                )}
+                Mark all read
+            </button>
+        )}
+    </div>
 
-                                    <button
-                                        type="button"
-                                        className="navbar-link-btn"
-                                        onClick={
-                                            handleMarkAllRead
-                                        }
-                                    >
-                                        Mark all read
-                                    </button>
+    <div className="navbar-notif-list">
 
-                                )}
+        {notifications.length === 0 ? (
+            <div className="notif-empty">
+                <div className="notif-empty-icon">
+                    <Bell size={25} />
+                </div>
 
-                            </div>
+                <h4>You're all caught up!</h4>
+                <p>New updates will appear here.</p>
+            </div>
+        ) : (
+            notifications.map((notification) => {
+                const Icon = getNotificationIcon(
+                    notification.type
+                );
 
-                            <div className="navbar-notif-list">
-
-                                {notifications.length ===
-                                0 ? (
-
-                                    <div className="navbar-notif-empty">
-                                        No notifications
-                                    </div>
-
-                                ) : (
-
-                                    notifications.map(
-                                        (
-                                            notification
-                                        ) => (
-
-                                            <div
-                                                className={`navbar-notif-item ${
-                                                    notification.read
-                                                        ? "navbar-notif-item--read"
-                                                        : ""
-                                                }`}
-                                                key={
-                                                    notification.id
-                                                }
-                                            >
-
-                                                {!notification.read && (
-                                                    <span className="navbar-notif-dot" />
-                                                )}
-
-                                                <div className="navbar-notif-body">
-
-                                                    <p className="navbar-notif-title">
-
-                                                        {
-                                                            notification.title
-                                                        }
-
-                                                    </p>
-
-                                                    <p className="navbar-notif-detail">
-
-                                                        {
-                                                            notification.detail
-                                                        }
-
-                                                    </p>
-
-                                                </div>
-
-                                                <span className="navbar-notif-time">
-
-                                                    {notification.createdAt
-                                                        ? new Date(
-                                                              notification.createdAt
-                                                          ).toLocaleTimeString(
-                                                              [],
-                                                              {
-                                                                  hour: "2-digit",
-                                                                  minute: "2-digit"
-                                                              }
-                                                          )
-                                                        : ""}
-
-                                                </span>
-
-                                            </div>
-
-                                        )
-                                    )
-
-                                )}
-
-                            </div>
-
+                return (
+                    <div
+                        className={`notif-card ${
+                            notification.read ? "is-read" : "is-unread"
+                        }`}
+                        key={notification.id}
+                    >
+                        <div className={`notif-card-icon ${
+                            notification.read ? "" : "notif-card-icon--unread"
+                        }`}>
+                            <Icon size={17} />
                         </div>
+
+                        <div className="notif-card-content">
+                            <div className="notif-card-title-row">
+                                <h4>{notification.title || "Notification"}</h4>
+
+                                {!notification.read && (
+                                    <span className="notif-unread-label">
+                                        NEW
+                                    </span>
+                                )}
+                            </div>
+
+                            <p>
+                                {notification.detail || "You have a new update."}
+                            </p>
+
+                            <span className="notif-card-time">
+                                <Clock3 size={12} />
+                                {getRelativeTime(notification.createdAt)}
+                            </span>
+                        </div>
+
+                        {!notification.read && (
+                            <span className="notif-card-dot" />
+                        )}
+                    </div>
+                );
+            })
+        )}
+
+    </div>
+
+    <div className="notif-panel-footer">
+        <span>
+            Showing {notifications.length} notifications
+        </span>
+    </div>
+
+</div>
+
 
                     )}
 

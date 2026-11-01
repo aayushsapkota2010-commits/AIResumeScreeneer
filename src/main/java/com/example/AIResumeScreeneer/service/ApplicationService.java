@@ -131,63 +131,80 @@ public class ApplicationService {
 
    
 public List<Application> getAllApplications() {
-    return applicationRepository
-            .findAllByOrderByAppliedAtDesc()
-            .stream()
-            .filter(application ->
-                    application.getResume() != null
-                    && !application.getResume().isDeleted())
-            .toList();
+    List<Application> all = applicationRepository.findAllByOrderByAppliedAtDesc();
+    List<Application> result = new java.util.ArrayList<>();
+
+    for (Application application : all) {
+        Resume resume = application.getResume();
+        if (resume == null || resume.isDeleted()) {
+            if (application.getCandidateEmail() != null && !application.getCandidateEmail().isBlank()) {
+                List<Resume> activeResumes = resumeRepository
+                        .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(application.getCandidateEmail());
+                if (!activeResumes.isEmpty()) {
+                    application.setResume(activeResumes.get(0));
+                    applicationRepository.save(application);
+                    result.add(application);
+                    continue;
+                }
+            }
+        } else {
+            result.add(application);
+        }
+    }
+
+    return result;
 }
 
 
     // ============================================================
     // UPDATE APPLICATION STATUS
     // ============================================================
+@Transactional
+public Application updateStatus(
+        Long applicationId,
+        ApplicationStatus newStatus) {
 
-    @Transactional
-    public Application updateStatus(
-            Long applicationId,
-            ApplicationStatus newStatus) {
+    Application application = applicationRepository
+            .findById(applicationId)
+            .orElseThrow(() ->
+                    new RuntimeException("Application not found"));
 
-        Application application = applicationRepository
-                .findById(applicationId)
-                .orElseThrow(() ->
-                        new RuntimeException("Application not found"));
+    ensureResumeIsActive(application);
 
-        ensureResumeIsActive(application);
+    ApplicationStatus oldStatus = application.getStatus();
 
-        ApplicationStatus oldStatus = application.getStatus();
+    // Always update the application status.
+    application.setStatus(newStatus);
+    application.setUpdatedAt(LocalDateTime.now());
 
-        if (oldStatus == newStatus) {
-            return application;
+    Application updatedApplication =
+            applicationRepository.save(application);
+
+    // Always synchronize the linked resume,
+    // even when the application status was already the same.
+    Resume resume = application.getResume();
+
+    if (resume != null && !resume.isDeleted()) {
+        try {
+            CandidateStatus resumeStatus =
+                    CandidateStatus.valueOf(newStatus.name());
+
+            resume.setStatus(resumeStatus);
+            resumeRepository.save(resume);
+
+        } catch (IllegalArgumentException e) {
+            System.out.println(
+                    "No matching CandidateStatus for " + newStatus);
         }
+    }
 
-        application.setStatus(newStatus);
-        application.setUpdatedAt(LocalDateTime.now());
-
-        Application updatedApplication =
-                applicationRepository.save(application);
-
-        // Sync application status to the resume status when possible.
-        if (application.getResume() != null  && !application.getResume().isDeleted()) {
-            try {
-                CandidateStatus resumeStatus =
-                        CandidateStatus.valueOf(newStatus.name());
-
-               Resume resume = application.getResume();
-        resume.setStatus(resumeStatus);
-        resumeRepository.save(resume);
-
-            } catch (IllegalArgumentException e) {
-                System.out.println(
-                        "No matching CandidateStatus for " + newStatus);
-            }
-        }
+    // Send notification only when the status actually changes.
+    if (oldStatus != newStatus) {
 
         String candidateEmail = application.getCandidateEmail();
 
         if (candidateEmail != null && !candidateEmail.isBlank()) {
+
             String jobTitle =
                     application.getJob() != null
                             && application.getJob().getTitle() != null
@@ -207,9 +224,10 @@ public List<Application> getAllApplications() {
                 "Application #" + applicationId
                         + " status changed: " + oldStatus
                         + " -> " + newStatus);
-
-        return updatedApplication;
     }
+
+    return updatedApplication;
+}
 
     // ============================================================
     // UPDATE STATUS USING RESUME ID
@@ -222,6 +240,22 @@ public Application updateStatusByResumeId(
     List<Application> applications =
             applicationRepository
                     .findByResumeIdOrderByAppliedAtDesc(resumeId);
+
+    // If no applications are found directly by resumeId, check by candidate email
+    if (applications.isEmpty()) {
+        Resume currentResume = resumeRepository.findById(resumeId).orElse(null);
+        if (currentResume != null && currentResume.getCandidateEmail() != null
+                && !currentResume.getCandidateEmail().isBlank()) {
+            List<Application> emailApps = applicationRepository
+                    .findByCandidateEmailOrderByAppliedAtDesc(currentResume.getCandidateEmail());
+            for (Application app : emailApps) {
+                if (app.getResume() == null || app.getResume().isDeleted()) {
+                    app.setResume(currentResume);
+                }
+            }
+            applications = emailApps;
+        }
+    }
 
     // A candidate may have a resume without any job applications.
     // Do not fail the resume status update in that case.
@@ -239,7 +273,12 @@ public Application updateStatusByResumeId(
         Resume linkedResume = application.getResume();
 
         if (linkedResume == null || linkedResume.isDeleted()) {
-            continue;
+            Resume activeResume = resumeRepository.findById(resumeId).orElse(null);
+            if (activeResume != null && !activeResume.isDeleted()) {
+                application.setResume(activeResume);
+            } else {
+                continue;
+            }
         }
 
         application.setStatus(newStatus);
@@ -356,6 +395,15 @@ public Application updateStatusByResumeId(
         Resume resume = application.getResume();
 
         if (resume == null || resume.isDeleted()) {
+            if (application.getCandidateEmail() != null && !application.getCandidateEmail().isBlank()) {
+                List<Resume> active = resumeRepository
+                        .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(application.getCandidateEmail());
+                if (!active.isEmpty()) {
+                    application.setResume(active.get(0));
+                    applicationRepository.save(application);
+                    return;
+                }
+            }
             throw new RuntimeException(
                     "This application is linked to a deleted resume");
         }

@@ -4,6 +4,7 @@ package com.example.AIResumeScreeneer.service;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.apache.tika.Tika;
 import org.springframework.security.core.Authentication;
@@ -12,9 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.AIResumeScreeneer.entity.Application;
 import com.example.AIResumeScreeneer.entity.CandidateStatus;
 import com.example.AIResumeScreeneer.entity.Resume;
 import com.example.AIResumeScreeneer.repository.ResumeRepository;
+
 import com.example.AIResumeScreeneer.repository.ActivityLogRepository;
 import com.example.AIResumeScreeneer.repository.ApplicationRepository;
 import com.example.AIResumeScreeneer.repository.RecruiterNoteRepository;
@@ -124,6 +127,7 @@ public class ResumeService {
         // Soft delete: preserve applications, interviews and history.
         resume.setDeleted(true);
         resumeRepository.save(resume);
+        relinkApplicationsToActiveResume(resume);
 
         System.out.println("Resume soft-deleted. ID = " + id);
     }
@@ -159,7 +163,24 @@ public class ResumeService {
         // Mark as deleted instead of physically removing the row.
         resume.setDeleted(true);
         resumeRepository.save(resume);
+        relinkApplicationsToActiveResume(resume);
 
         System.out.println("Resume soft-deleted. ID = " + id);
+    }
+
+    private void relinkApplicationsToActiveResume(Resume deletedResume) {
+        if (deletedResume.getCandidateEmail() != null && !deletedResume.getCandidateEmail().isBlank()) {
+            List<Resume> remainingActive = resumeRepository
+                    .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(deletedResume.getCandidateEmail());
+            if (!remainingActive.isEmpty()) {
+                Resume activeResume = remainingActive.get(0);
+                List<Application> apps = applicationRepository
+                        .findByResumeIdOrderByAppliedAtDesc(deletedResume.getId());
+                for (Application app : apps) {
+                    app.setResume(activeResume);
+                    applicationRepository.save(app);
+                }
+            }
+        }
     }
 }

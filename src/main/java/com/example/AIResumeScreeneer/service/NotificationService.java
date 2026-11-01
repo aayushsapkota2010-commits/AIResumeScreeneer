@@ -58,10 +58,6 @@ public class NotificationService {
         
         System.out.println("SENDING GLOBAL WEBSOCKET NOTIFICATION TO: /topic/notifications");
 
-messagingTemplate.convertAndSend(
-        "/topic/notifications",
-        saved
-);
         // Send to admin/recruiter real-time channel
         messagingTemplate.convertAndSend(
                 "/topic/notifications",

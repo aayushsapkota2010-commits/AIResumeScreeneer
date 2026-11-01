@@ -194,7 +194,7 @@ function PipelineBoard() {
                 padding: "28px 32px",
                 width: "100%",
                 boxSizing: "border-box",
-                overflowX: "auto"
+                overflowX: "hidden"
             }}
         >
 
@@ -259,9 +259,8 @@ function PipelineBoard() {
                 style={{
                     display: "grid",
                     gridTemplateColumns:
-                        "repeat(6, minmax(220px, 1fr))",
-                    gap: "16px",
-                    minWidth: "1360px",
+                        `repeat(${statuses.length}, 1fr)`,
+                    gap: "12px",
                     alignItems: "start"
                 }}
             >

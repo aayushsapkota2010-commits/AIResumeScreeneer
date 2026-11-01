@@ -75,6 +75,7 @@ public class JobService {
         existingJob.setEmploymentType(updatedJob.getEmploymentType());
         existingJob.setExperience(updatedJob.getExperience());
         existingJob.setSalary(updatedJob.getSalary());
+        existingJob.setRequiredSkills(updatedJob.getRequiredSkills());
         existingJob.setDeadline(updatedJob.getDeadline());
 
         if (updatedJob.getStatus() != null &&
