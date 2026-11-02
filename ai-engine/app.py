@@ -38,14 +38,12 @@ elif api_key.startswith("AQ."):
 
 client = genai.Client(api_key=api_key) if api_key else None
 
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-1.5-flash").strip()
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
 FALLBACK_MODELS = [
     model
     for model in [
         MODEL_NAME,
-        "gemini-1.5-flash",
-        "gemini-1.5-pro",
-        "gemini-2.0-flash",
+        "gemini-3.8-flash",
     ]
     if model
 ]
