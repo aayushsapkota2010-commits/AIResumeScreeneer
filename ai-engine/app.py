@@ -6,6 +6,11 @@ from dotenv import load_dotenv
 import os
 import logging
 
+try:
+    from groq import Groq
+except ImportError:  # handled at runtime with a clear log message
+    Groq = None
+
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
@@ -20,83 +25,123 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-api_key = (
+gemini_api_key = (
     os.getenv("GEMINI_API_KEY")
     or os.getenv("GOOGLE_API_KEY")
     or ""
 ).strip()
 
-if not api_key:
-    logger.warning("GEMINI_API_KEY is missing! The chatbot endpoints will fail.")
-elif api_key.startswith("AQ."):
+if not gemini_api_key:
+    logger.warning("GEMINI_API_KEY is missing. Gemini calls will be skipped.")
+elif gemini_api_key.startswith("AQ."):
     logger.warning(
-        "GEMINI_API_KEY uses Google AI Studio's new AQ. key format. Some projects "
-        "currently receive ACCESS_TOKEN_TYPE_UNSUPPORTED for these keys. If you get "
-        "a 401, create a fresh key in a new AI Studio project or use a Google Cloud "
-        "API key (AIza...) for the same Generative Language API."
+        "GEMINI_API_KEY uses Google AI Studio's AQ. key format. Some projects receive "
+        "ACCESS_TOKEN_TYPE_UNSUPPORTED for these keys. Groq will be used as a fallback "
+        "when GROQ_API_KEY is configured."
     )
 
-client = genai.Client(api_key=api_key) if api_key else None
+gemini_client = genai.Client(api_key=gemini_api_key) if gemini_api_key else None
 
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
-FALLBACK_MODELS = [
-    model
-    for model in [
-        MODEL_NAME,
-        "gemini-3.8-flash",
-    ]
-    if model
-]
+groq_api_key = (os.getenv("GROQ_API_KEY") or "").strip()
+
+if not groq_api_key:
+    logger.warning("GROQ_API_KEY is missing. Groq fallback will be unavailable.")
+elif Groq is None:
+    logger.warning(
+        "The 'groq' package is not installed. Run 'pip install -r requirements.txt' "
+        "to enable the Groq fallback."
+    )
+
+groq_client = Groq(api_key=groq_api_key) if (groq_api_key and Groq) else None
 
 
 def _unique(items: list[str]) -> list[str]:
     seen = set()
     ordered = []
     for item in items:
-        if item not in seen:
+        item = (item or "").strip()
+        if item and item not in seen:
             seen.add(item)
             ordered.append(item)
     return ordered
 
 
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+GEMINI_FALLBACK_MODELS = _unique(
+    [
+        GEMINI_MODEL,
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+    ]
+)
+
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
+GROQ_FALLBACK_MODELS = _unique(
+    [
+        GROQ_MODEL,
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "openai/gpt-oss-120b",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
+    ]
+)
+
+
 def _is_auth_error(error: Exception) -> bool:
-    text = str(error)
+    text = str(error).lower()
     return any(
         token in text
         for token in (
-            "ACCESS_TOKEN_TYPE_UNSUPPORTED",
-            "API key not valid",
-            "UNAUTHENTICATED",
-            "API_KEY_INVALID",
+            "access_token_type_unsupported",
+            "api key not valid",
+            "unauthenticated",
+            "api_key_invalid",
+            "invalid api key",
+            "401",
+            "403",
         )
     )
 
 
 def _is_model_error(error: Exception) -> bool:
-    text = str(error)
+    text = str(error).lower()
     return any(
         token in text
         for token in (
-            "NOT_FOUND",
+            "not_found",
             "not found",
             "no longer available",
             "is not found",
+            "does not exist",
+            "model_not_found",
+            "404",
+        )
+    )
+
+
+def _is_rate_limit_error(error: Exception) -> bool:
+    text = str(error).lower()
+    return any(
+        token in text
+        for token in (
+            "429",
+            "rate limit",
+            "quota",
+            "resource_exhausted",
         )
     )
 
 
 def ask_gemini(prompt: str) -> str:
-    if client is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Gemini API key is not configured. Set GEMINI_API_KEY on the AI engine service.",
-        )
+    if gemini_client is None:
+        raise RuntimeError("Gemini API key is not configured.")
 
     last_error: Exception | None = None
 
-    for model_name in _unique(FALLBACK_MODELS):
+    for model_name in GEMINI_FALLBACK_MODELS:
         try:
-            response = client.models.generate_content(
+            response = gemini_client.models.generate_content(
                 model=model_name,
                 contents=prompt,
             )
@@ -104,40 +149,97 @@ def ask_gemini(prompt: str) -> str:
             answer = getattr(response, "text", None)
 
             if not answer or not answer.strip():
-                raise Exception("Gemini returned an empty response.")
+                raise RuntimeError("Gemini returned an empty response.")
 
-            if model_name != MODEL_NAME:
+            if model_name != GEMINI_MODEL:
                 logger.info("Gemini request succeeded with fallback model %s", model_name)
 
             return answer
 
-        except HTTPException:
-            raise
+        except Exception as error:
+            last_error = error
+            logger.warning("Gemini request failed for model %s: %s", model_name, error)
+
+            if _is_auth_error(error) or _is_rate_limit_error(error):
+                break
+
+    raise RuntimeError(f"Gemini request failed: {last_error}") from last_error
+
+
+def ask_groq(prompt: str) -> str:
+    if groq_client is None:
+        raise RuntimeError("Groq API key is not configured.")
+
+    last_error: Exception | None = None
+
+    for model_name in GROQ_FALLBACK_MODELS:
+        try:
+            completion = groq_client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a helpful, accurate AI resume and career assistant. "
+                            "Never invent personal facts that are not in the resume."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.4,
+                max_tokens=2048,
+            )
+
+            answer = completion.choices[0].message.content
+
+            if not answer or not answer.strip():
+                raise RuntimeError("Groq returned an empty response.")
+
+            if model_name != GROQ_MODEL:
+                logger.info("Groq request succeeded with fallback model %s", model_name)
+
+            return answer
 
         except Exception as error:
             last_error = error
-            logger.exception("Gemini API request failed for model %s", model_name)
+            logger.warning("Groq request failed for model %s: %s", model_name, error)
 
-            if _is_auth_error(error):
-                raise HTTPException(
-                    status_code=502,
-                    detail=(
-                        "Gemini API key authentication failed (ACCESS_TOKEN_TYPE_UNSUPPORTED). "
-                        "AQ. keys from some AI Studio projects are not accepted by the Generative Language API. "
-                        "Create a new API key in Google AI Studio (preferably in a different project) or use a Google Cloud API key (AIza...) "
-                        "with the Gemini API enabled and set GEMINI_API_KEY on the AI engine service. "
-                        "Do not commit the key to git."
-                    ),
-                ) from error
-
-            if not _is_model_error(error):
+            if not _is_model_error(error) or _is_auth_error(error) or _is_rate_limit_error(error):
                 break
 
-    logger.exception("Gemini API request failed")
+    raise RuntimeError(f"Groq request failed: {last_error}") from last_error
+
+
+def ask_ai(prompt: str) -> str:
+    errors: list[str] = []
+
+    if gemini_client is not None:
+        try:
+            return ask_gemini(prompt)
+        except Exception as error:
+            errors.append(f"Gemini: {error}")
+            logger.exception("Gemini failed, trying Groq fallback")
+    else:
+        errors.append("Gemini: not configured")
+
+    if groq_client is not None:
+        try:
+            answer = ask_groq(prompt)
+            logger.info("Groq fallback succeeded")
+            return answer
+        except Exception as error:
+            errors.append(f"Groq: {error}")
+            logger.exception("Groq fallback failed")
+    else:
+        errors.append("Groq: not configured")
+
     raise HTTPException(
         status_code=502,
-        detail="AI service request failed. Check the Python server logs.",
-    ) from last_error
+        detail=(
+            "AI service request failed. Configure a valid GEMINI_API_KEY or "
+            "GROQ_API_KEY on the AI engine service. " + " | ".join(errors)
+        ),
+    )
 
 
 class ResumeRequest(BaseModel):
@@ -197,7 +299,7 @@ def analyze_resume(request: ResumeRequest):
     Return clean text.
     """
 
-    return {"analysis": ask_gemini(prompt)}
+    return {"analysis": ask_ai(prompt)}
 
 
 @app.post("/cover-letter")
@@ -214,7 +316,7 @@ def generate_cover_letter(request: CoverLetterRequest):
     Make it professional and recruiter friendly.
     """
 
-    return {"coverLetter": ask_gemini(prompt)}
+    return {"coverLetter": ask_ai(prompt)}
 
 
 @app.post("/mock-interview")
@@ -238,7 +340,7 @@ def mock_interview(request: MockInterviewRequest):
     Return numbered questions only.
     """
 
-    return {"questions": ask_gemini(prompt)}
+    return {"questions": ask_ai(prompt)}
 
 
 @app.post("/evaluate-answer")
@@ -261,7 +363,7 @@ def evaluate_answer(request: EvaluationRequest):
     Interviewer Feedback
     """
 
-    return {"evaluation": ask_gemini(prompt)}
+    return {"evaluation": ask_ai(prompt)}
 
 
 @app.post("/recommend-jobs")
@@ -280,7 +382,7 @@ def recommend_jobs(request: JobRecommendationRequest):
     Return clean formatted text.
     """
 
-    return {"recommendations": ask_gemini(prompt)}
+    return {"recommendations": ask_ai(prompt)}
 
 
 @app.post("/roadmap")
@@ -303,7 +405,7 @@ def roadmap(request: RoadmapRequest):
     Return clean formatted text.
     """
 
-    return {"roadmap": ask_gemini(prompt)}
+    return {"roadmap": ask_ai(prompt)}
 
 
 @app.post("/resume-chat")
@@ -350,12 +452,12 @@ def resume_chat(request: ResumeChatRequest):
     9. Give actionable steps when the user asks how to improve something.
 
     10. If no target job description is provided, do not claim a skill
-        is required for a specific job.
+         is required for a specific job.
 
     Now answer the user's question.
     """
 
-    return {"answer": ask_gemini(prompt)}
+    return {"answer": ask_ai(prompt)}
 
 
 @app.post("/interview-questions")
@@ -389,7 +491,7 @@ def generate_interview_questions(request: InterviewQuestionRequest):
     1.
     """
 
-    return {"questions": ask_gemini(prompt)}
+    return {"questions": ask_ai(prompt)}
 
 
 @app.get("/")
@@ -397,6 +499,8 @@ def generate_interview_questions(request: InterviewQuestionRequest):
 def health_check():
     return {
         "status": "UP",
-        "gemini_configured": client is not None,
-        "model": MODEL_NAME,
+        "gemini_configured": gemini_client is not None,
+        "groq_configured": groq_client is not None,
+        "gemini_model": GEMINI_MODEL,
+        "groq_model": GROQ_MODEL,
     }
