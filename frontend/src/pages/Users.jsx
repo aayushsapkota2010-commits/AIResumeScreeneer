@@ -7,7 +7,7 @@ import {
     Trash2,
     RefreshCw
 } from "lucide-react";
-import "./Users.css";
+import "../components/Users.css";
 
 function Users() {
 
