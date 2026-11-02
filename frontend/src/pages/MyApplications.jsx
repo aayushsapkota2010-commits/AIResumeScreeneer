@@ -17,6 +17,7 @@ import {
     ChevronUp
 } from "lucide-react";
 import api from "../api/api";
+import { API_BASE_URL } from "../api/config/constants";
 import "./MyApplications.css";
 
 function MyApplications() {
@@ -1176,7 +1177,7 @@ function MyApplications() {
                     <button
                         onClick={() =>
                             window.open(
-                                `${import.meta.env.VITE_API_URL}/resume/view/${resume.id}`,
+                                `${API_BASE_URL}/resume/view/${resume.id}`,
                                 "_blank"
                             )
                         }

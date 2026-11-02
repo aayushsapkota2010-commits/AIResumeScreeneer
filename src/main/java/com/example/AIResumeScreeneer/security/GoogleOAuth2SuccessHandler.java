@@ -1,7 +1,9 @@
+
 package com.example.AIResumeScreeneer.security;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -21,6 +23,9 @@ public class GoogleOAuth2SuccessHandler
         extends SimpleUrlAuthenticationSuccessHandler {
 
     private final UserService userService;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(
@@ -48,13 +53,10 @@ public class GoogleOAuth2SuccessHandler
             name = email.split("@")[0];
         }
 
-        String jwt = userService.loginWithGoogle(
-                email,
-                name);
+        String jwt = userService.loginWithGoogle(email, name);
 
         String redirectUrl =
-                "http://localhost:5173/oauth2/callback"
-                + "#token=" + jwt;
+                frontendUrl + "/oauth2/callback#token=" + jwt;
 
         getRedirectStrategy().sendRedirect(
                 request,

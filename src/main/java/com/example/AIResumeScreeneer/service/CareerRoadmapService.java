@@ -1,28 +1,25 @@
 package com.example.AIResumeScreeneer.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import com.example.AIResumeScreeneer.config.AiEngineClient;
 import com.example.AIResumeScreeneer.dto.RoadmapRequest;
 import com.example.AIResumeScreeneer.dto.RoadmapResponse;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class CareerRoadmapService {
 
-    public RoadmapResponse generate(
-            String resumeText) {
+    private final AiEngineClient aiEngineClient;
 
-        RestTemplate restTemplate =
-                new RestTemplate();
+    public RoadmapResponse generate(String resumeText) {
+        RoadmapRequest request = new RoadmapRequest();
+        request.setResumeText(resumeText);
 
-        RoadmapRequest request =
-                new RoadmapRequest();
-
-        request.setResumeText(
-                resumeText);
-
-        return restTemplate.postForObject(
-                "http://localhost:8000/roadmap",
+        return aiEngineClient.post(
+                "/roadmap",
                 request,
                 RoadmapResponse.class);
     }

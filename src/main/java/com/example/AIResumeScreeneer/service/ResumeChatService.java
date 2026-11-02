@@ -1,28 +1,29 @@
-
 package com.example.AIResumeScreeneer.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import com.example.AIResumeScreeneer.config.AiEngineClient;
 import com.example.AIResumeScreeneer.dto.ResumeChatRequest;
 import com.example.AIResumeScreeneer.dto.ResumeChatResponse;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class ResumeChatService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final AiEngineClient aiEngineClient;
 
     public ResumeChatResponse askQuestion(
             String resumeText,
             String question) {
 
         ResumeChatRequest request = new ResumeChatRequest();
-
         request.setResumeText(resumeText);
         request.setQuestion(question);
 
-        return restTemplate.postForObject(
-                "http://localhost:8000/resume-chat",
+        return aiEngineClient.post(
+                "/resume-chat",
                 request,
                 ResumeChatResponse.class
         );

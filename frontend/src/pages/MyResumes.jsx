@@ -12,6 +12,7 @@ import {
     Sparkles
 } from "lucide-react";
 import api from "../api/api";
+import { API_BASE_URL } from "../api/config/constants";
 import "./MyResumes.css";
 
 function formatFileSize(bytes) {
@@ -101,7 +102,7 @@ function MyResumes() {
 
     const fileInputRef = useRef(null);
 
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = API_BASE_URL;
 
     useEffect(() => {
         fetchMyResumes();

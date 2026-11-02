@@ -1,0 +1,10 @@
+.git
+.idea
+.vscode
+frontend
+ai-engine
+target
+uploads
+**/.env
+**/*.md
+**/node_modules

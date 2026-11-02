@@ -3,12 +3,13 @@ import { useParams } from "react-router-dom";
 import { Activity, ArrowDownToLine, ArrowUpRight, Bot, CheckCircle2, FileText, MessageCircle, Send, Sparkles, Target, UserRound, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import api from "../api/api";
+import { API_BASE_URL } from "../api/config/constants";
 import RecruiterNotes from "../components/RecruiterNotes";
 import "./ResumeDetails.css";
 
 function ResumeDetails() {
     const { id } = useParams();
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = API_BASE_URL;
     const [resume, setResume] = useState(null);
     const [timeline, setTimeline] = useState([]);
     const [question, setQuestion] = useState("");

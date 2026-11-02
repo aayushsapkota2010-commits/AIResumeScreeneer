@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api/api";
+import { GOOGLE_LOGIN_URL } from "../api/config/constants";
 import "./Login.css";
 
 function Login() {
@@ -115,8 +116,7 @@ localStorage.setItem("email", email.trim());
 
     const googleLogin = () => {
 
-        window.location.href =
-            "http://localhost:8080/oauth2/authorization/google";
+        window.location.href = GOOGLE_LOGIN_URL;
 
     };
 

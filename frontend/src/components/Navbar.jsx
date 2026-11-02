@@ -20,6 +20,7 @@ import {
 import { Client } from "@stomp/stompjs";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
+import { API_BASE_URL } from "../api/config/constants";
 import "./Navbar.css";
 
 function getNotificationIcon(type = "") {
@@ -311,8 +312,7 @@ function Navbar() {
         // WEBSOCKET URL
         // --------------------------------------------------------
 
-        const apiUrl =
-            import.meta.env.VITE_API_URL;
+        const apiUrl = API_BASE_URL;
 
         if (!apiUrl) {
 

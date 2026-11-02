@@ -1,37 +1,27 @@
 package com.example.AIResumeScreeneer.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import com.example.AIResumeScreeneer.config.AiEngineClient;
 import com.example.AIResumeScreeneer.dto.InterviewQuestionRequest;
 import com.example.AIResumeScreeneer.dto.InterviewQuestionResponse;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AIInterviewService {
 
-    public InterviewQuestionResponse generateQuestions(
+    private final AiEngineClient aiEngineClient;
 
-            String resumeText
-
-    ) {
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        InterviewQuestionRequest request =
-                new InterviewQuestionRequest();
-
+    public InterviewQuestionResponse generateQuestions(String resumeText) {
+        InterviewQuestionRequest request = new InterviewQuestionRequest();
         request.setResumeText(resumeText);
 
-        return restTemplate.postForObject(
-
-                "http://localhost:8000/interview-questions",
-
+        return aiEngineClient.post(
+                "/interview-questions",
                 request,
-
                 InterviewQuestionResponse.class
-
         );
-
     }
-
 }

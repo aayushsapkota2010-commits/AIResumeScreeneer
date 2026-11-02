@@ -50,7 +50,8 @@ private final GoogleOAuth2SuccessHandler googleOAuth2SuccessHandler;
 
                 .requestMatchers(
                     "/oauth2/**",
-                    "/login/oauth2/**"
+                    "/login/oauth2/**",
+                    "/health"
                 ).permitAll()
 
                 .requestMatchers(

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../api/api";
+import { API_BASE_URL } from "../api/config/constants";
 import { useNavigate } from "react-router-dom";
 import InterviewQuestionModal
 from "../components/InterviewQuestionModal";
@@ -265,7 +266,7 @@ const [loadingQuestions, setLoadingQuestions] = useState(false);
         return result;
     }, [candidates, searchTerm, statusFilter, sortBy]);
 
-   const API_URL = import.meta.env.VITE_API_URL;
+   const API_URL = API_BASE_URL;
 
 const handleViewResume = (candidate) => {
 

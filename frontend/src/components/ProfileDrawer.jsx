@@ -1,6 +1,7 @@
 import { Download, ExternalLink, ArrowRightLeft, FileText, Calendar } from "lucide-react";
 import "./ProfileDrawer.css";
 import api from "../api/api";
+import { API_BASE_URL } from "../api/config/constants";
 
 
 
@@ -53,7 +54,7 @@ function ProfileDrawer({
     onMoveStage
 }) {
     if (!candidate) return null;
-     const API_URL = import.meta.env.VITE_API_URL;
+     const API_URL = API_BASE_URL;
 
     const timeline = candidate.timeline?.length
         ? candidate.timeline

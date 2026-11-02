@@ -1,21 +1,24 @@
 package com.example.AIResumeScreeneer.service;
 
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import java.util.Map;
 
+import org.springframework.stereotype.Service;
+
+import com.example.AIResumeScreeneer.config.AiEngineClient;
 import com.example.AIResumeScreeneer.dto.JobRecommendationResponse;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class JobRecommendationService {
-    public JobRecommendationResponse recommend(String resumeText)
-    {
-        RestTemplate restTemplate=new RestTemplate();
-         return restTemplate.postForObject(
-                "http://localhost:8000/recommend-jobs",
-                java.util.Map.of(
-                        "resumeText",
-                        resumeText),
+
+    private final AiEngineClient aiEngineClient;
+
+    public JobRecommendationResponse recommend(String resumeText) {
+        return aiEngineClient.post(
+                "/recommend-jobs",
+                Map.of("resumeText", resumeText),
                 JobRecommendationResponse.class);
     }
-    
 }

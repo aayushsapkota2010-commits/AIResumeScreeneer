@@ -31,3 +31,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Secrets and local env ###
+.env
+.env.*
+!.env.example
+ai-engine/.env
+ai-engine/.venv/
+ai-engine/__pycache__/
+**/__pycache__/
+
+### Frontend ###
+frontend/node_modules/
+frontend/dist/

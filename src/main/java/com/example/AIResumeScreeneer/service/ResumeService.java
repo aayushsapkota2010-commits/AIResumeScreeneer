@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -38,15 +39,17 @@ public class ResumeService {
     private final InterviewRepository interviewRepository;
     private final ApplicationRepository applicationRepository;
 
+    @Value("${app.upload.dir:}")
+    private String configuredUploadDir;
+
     public String uploadResume(
             MultipartFile file,
             String candidateEmail
     ) throws IOException {
 
-        String uploadDir =
-                System.getProperty("user.home")
-                        + File.separator
-                        + "resume-uploads";
+        String uploadDir = (configuredUploadDir != null && !configuredUploadDir.isBlank())
+                ? configuredUploadDir
+                : System.getProperty("user.home") + File.separator + "resume-uploads";
 
         File directory = new File(uploadDir);
 

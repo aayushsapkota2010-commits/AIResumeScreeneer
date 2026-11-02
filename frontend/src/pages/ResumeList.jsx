@@ -9,6 +9,7 @@ import {
     Trash2
 } from "lucide-react";
 import api from "../api/api";
+import { API_BASE_URL } from "../api/config/constants";
 import "./ResumeList.css";
 
 function getStatusClass(status) {
@@ -37,7 +38,7 @@ function ResumeList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
 
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = API_BASE_URL;
 
     useEffect(() => {
         api.get("/resume/all")
