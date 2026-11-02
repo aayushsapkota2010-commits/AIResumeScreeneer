@@ -89,22 +89,8 @@ def ask_gemini(prompt: str) -> str:
     if client is None:
         raise HTTPException(
             status_code=500,
-            detail="Gemini API key is not configured.",
+            detail="Gemini API key is not configured. Set GEMINI_API_KEY on the AI engine service.",
         )
-
-    try:
-        # Correct syntax for google-genai SDK
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt,
-        )
-        return response.text
-    except Exception as error:
-        logger.exception("Gemini API request failed")
-        raise HTTPException(
-            status_code=502,
-            detail=f"AI service error: {str(error)}",
-        ) from error
 
     last_error: Exception | None = None
 
