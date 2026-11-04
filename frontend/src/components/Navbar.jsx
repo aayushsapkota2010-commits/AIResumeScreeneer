@@ -797,7 +797,7 @@ const handleMarkAllRead = async () => {
             <div className="navbar-left">
 
                 <h1 className="navbar-title">
-                    Dashboard
+                    
                 </h1>
 
             </div>

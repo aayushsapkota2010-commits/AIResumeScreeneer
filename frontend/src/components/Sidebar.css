@@ -84,10 +84,10 @@
 }
 
 .sidebar-logo {
-    width: 38px;
-    height: 38px;
+    width: 48px;
+    height: 48px;
     flex-shrink: 0;
-    border-radius: 12px;
+    border-radius: 22px;
     background: linear-gradient(140deg, #4f5eff 0%, #7c6fff 100%);
     box-shadow: 0 6px 16px -4px rgba(79, 94, 255, 0.45);
     color: #ffffff;
