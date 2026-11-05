@@ -17,7 +17,7 @@ import {
     ChevronUp
 } from "lucide-react";
 import api from "../api/api";
-import { API_BASE_URL } from "../api/config/constants";
+import { openResumePdf } from "../api/openResume";
 import "./MyApplications.css";
 
 function MyApplications() {
@@ -1175,12 +1175,7 @@ function MyApplications() {
 
                 {resume?.id && (
                     <button
-                        onClick={() =>
-                            window.open(
-                                `${API_BASE_URL}/resume/view/${resume.id}`,
-                                "_blank"
-                            )
-                        }
+                        onClick={() => openResumePdf(resume.id)}
                     >
                         View Resume
                     </button>

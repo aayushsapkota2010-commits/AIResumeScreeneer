@@ -9,7 +9,7 @@ import {
     Trash2
 } from "lucide-react";
 import api from "../api/api";
-import { API_BASE_URL } from "../api/config/constants";
+import { openResumePdf } from "../api/openResume";
 import "./ResumeList.css";
 
 function getStatusClass(status) {
@@ -37,8 +37,6 @@ function ResumeList() {
     const [resumes, setResumes] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
-
-    const API_URL = API_BASE_URL;
 
     useEffect(() => {
         api.get("/resume/all")
@@ -97,13 +95,6 @@ function ResumeList() {
     );
 }
 };
-
-    const openResume = (resumeId) => {
-        window.open(
-            `${API_URL}/resume/view/${resumeId}`,
-            "_blank"
-        );
-    };
 
     return (
         <div className="resume-page">
@@ -328,7 +319,7 @@ function ResumeList() {
         type="button"
         className="resume-action resume-action--secondary"
         onClick={() =>
-            openResume(resume.id)
+            openResumePdf(resume.id)
         }
     >
         <ExternalLink size={15} />

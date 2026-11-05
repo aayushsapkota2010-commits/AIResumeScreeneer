@@ -104,7 +104,7 @@ function Dashboard() {
                     />
                     <StatCard
                         label="Average ATS Score"
-                        value={dashboard.averageAtsScore.toFixed(1)}
+                        value={Number(dashboard.averageAtsScore ?? 0).toFixed(1)}
                         icon={<FaChartLine />}
                         accent="sage"
                     />

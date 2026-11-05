@@ -12,7 +12,7 @@ import {
     Sparkles
 } from "lucide-react";
 import api from "../api/api";
-import { API_BASE_URL } from "../api/config/constants";
+import { openResumePdf } from "../api/openResume";
 import "./MyResumes.css";
 
 function formatFileSize(bytes) {
@@ -101,8 +101,6 @@ function MyResumes() {
     const [message, setMessage] = useState("");
 
     const fileInputRef = useRef(null);
-
-    const API_URL = API_BASE_URL;
 
     useEffect(() => {
         fetchMyResumes();
@@ -270,10 +268,7 @@ function MyResumes() {
 
     const openResume = (id) => {
 
-        window.open(
-            `${API_URL}/resume/view/${id}`,
-            "_blank"
-        );
+        openResumePdf(id);
     };
 
     const totalResumes = resumes.length;

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../api/api";
-import { API_BASE_URL } from "../api/config/constants";
+import { openResumePdf } from "../api/openResume";
 import { useNavigate } from "react-router-dom";
 import InterviewQuestionModal
 from "../components/InterviewQuestionModal";
@@ -266,14 +266,9 @@ const [loadingQuestions, setLoadingQuestions] = useState(false);
         return result;
     }, [candidates, searchTerm, statusFilter, sortBy]);
 
-   const API_URL = API_BASE_URL;
-
 const handleViewResume = (candidate) => {
 
-    window.open(
-        `${API_URL}/resume/view/${candidate.id}`,
-        "_blank"
-    );
+    openResumePdf(candidate.id);
 
 };
 
@@ -304,12 +299,6 @@ const handleGenerateQuestions = async (candidate) => {
 
     }
 
-};
-const handleDownload = () => {
-    window.open(
-        `${API_URL}/resume/view/${candidate.id}`,
-        "_blank"
-    );
 };
 
 const handleOpenProfile = (candidate) => {

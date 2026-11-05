@@ -3,13 +3,12 @@ import { useParams } from "react-router-dom";
 import { Activity, ArrowDownToLine, ArrowUpRight, Bot, CheckCircle2, FileText, MessageCircle, Send, Sparkles, Target, UserRound, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import api from "../api/api";
-import { API_BASE_URL } from "../api/config/constants";
+import { openResumePdf } from "../api/openResume";
 import RecruiterNotes from "../components/RecruiterNotes";
 import "./ResumeDetails.css";
 
 function ResumeDetails() {
     const { id } = useParams();
-    const API_URL = API_BASE_URL;
     const [resume, setResume] = useState(null);
     const [timeline, setTimeline] = useState([]);
     const [question, setQuestion] = useState("");
@@ -96,39 +95,8 @@ What would you like to explore today?`
         }
     };
 
-const openPdf = async () => {
-    try {
-        const response = await api.get(`/resume/view/${id}`, {
-            responseType: "blob",
-        });
-
-        const pdfBlob = new Blob([response.data], {
-            type: "application/pdf",
-        });
-
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        const newTab = window.open(pdfUrl, "_blank");
-
-        if (!newTab) {
-            const link = document.createElement("a");
-            link.href = pdfUrl;
-            link.download = resume?.fileName || "resume.pdf";
-            link.click();
-        }
-
-        setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
-   } catch (error) {
-    console.error("Failed to open resume:", error);
-    console.error("HTTP status:", error.response?.status);
-
-    const data = error.response?.data;
-
-    if (data instanceof Blob) {
-        console.error("Backend error body:", await data.text());
-    } else {
-        console.error("Backend error body:", data);
-    }
-}
+const openPdf = () => {
+    openResumePdf(id);
 };
    const dateLabel = (value) => {
     if (value === null || value === undefined || value === "") {

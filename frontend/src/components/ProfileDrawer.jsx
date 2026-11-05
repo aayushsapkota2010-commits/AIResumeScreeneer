@@ -1,7 +1,7 @@
 import { Download, ExternalLink, ArrowRightLeft, FileText, Calendar } from "lucide-react";
 import "./ProfileDrawer.css";
 import api from "../api/api";
-import { API_BASE_URL } from "../api/config/constants";
+import { openResumePdf } from "../api/openResume";
 
 
 
@@ -54,7 +54,6 @@ function ProfileDrawer({
     onMoveStage
 }) {
     if (!candidate) return null;
-     const API_URL = API_BASE_URL;
 
     const timeline = candidate.timeline?.length
         ? candidate.timeline
@@ -63,10 +62,7 @@ function ProfileDrawer({
     const skills = Array.isArray(candidate.skills) ? candidate.skills : [];
     const handleViewResume = (candidate) => {
 
-    window.open(
-        `${API_URL}/resume/view/${candidate.id}`,
-        "_blank"
-    );
+    openResumePdf(candidate.id);
 
 };
 const handleDownload = async () => {
