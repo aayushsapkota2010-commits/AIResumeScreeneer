@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.AIResumeScreeneer.dto.ApplicationSummaryResponse;
 import com.example.AIResumeScreeneer.entity.Application;
 import com.example.AIResumeScreeneer.entity.ApplicationStatus;
 import com.example.AIResumeScreeneer.entity.CandidateStatus;
@@ -156,30 +157,94 @@ public class ApplicationService {
     // USED BY RECRUITER PIPELINE
     // ============================================================
 
-   
+@Transactional(readOnly = true)
 public List<Application> getAllApplications() {
-    List<Application> all = applicationRepository.findAllByOrderByAppliedAtDesc();
+
+    List<Application> all =
+            applicationRepository.findAllByOrderByAppliedAtDesc();
+
     List<Application> result = new java.util.ArrayList<>();
+    java.util.Map<String, Resume> activeResumeCache =
+            new java.util.HashMap<>();
 
     for (Application application : all) {
+
         Resume resume = application.getResume();
-        if (resume == null || resume.isDeleted()) {
-            if (application.getCandidateEmail() != null && !application.getCandidateEmail().isBlank()) {
-                List<Resume> activeResumes = resumeRepository
-                        .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(application.getCandidateEmail());
-                if (!activeResumes.isEmpty()) {
-                    application.setResume(activeResumes.get(0));
-                    applicationRepository.save(application);
-                    result.add(application);
-                    continue;
-                }
-            }
-        } else {
+
+        if (resume != null && !resume.isDeleted()) {
             result.add(application);
+            continue;
+        }
+
+        String candidateEmail = application.getCandidateEmail();
+
+        if (candidateEmail == null || candidateEmail.isBlank()) {
+            continue;
+        }
+
+        Resume activeResume = activeResumeCache.computeIfAbsent(
+                candidateEmail,
+                email -> {
+                    List<Resume> activeResumes = resumeRepository
+                            .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(
+                                    email);
+                    return activeResumes.isEmpty()
+                            ? null
+                            : activeResumes.get(0);
+                });
+
+        if (activeResume != null) {
+            result.add(Application.builder()
+                    .id(application.getId())
+                    .job(application.getJob())
+                    .resume(activeResume)
+                    .candidateEmail(application.getCandidateEmail())
+                    .status(application.getStatus())
+                    .appliedAt(application.getAppliedAt())
+                    .updatedAt(application.getUpdatedAt())
+                    .atsScore(application.getAtsScore())
+                    .matchScore(application.getMatchScore())
+                    .matchedSkills(application.getMatchedSkills())
+                    .missingSkills(application.getMissingSkills())
+                    .recommendation(application.getRecommendation())
+                    .build());
         }
     }
 
     return result;
+}
+
+@Transactional(readOnly = true)
+public List<ApplicationSummaryResponse> getPipelineApplications() {
+
+    return getAllApplications()
+            .stream()
+            .map(application -> ApplicationSummaryResponse.builder()
+                    .id(application.getId())
+                    .candidateEmail(application.getCandidateEmail())
+                    .status(application.getStatus() != null
+                            ? application.getStatus().name()
+                            : "APPLIED")
+                    .appliedAt(application.getAppliedAt())
+                    .updatedAt(application.getUpdatedAt())
+                    .atsScore(application.getAtsScore())
+                    .matchScore(application.getMatchScore())
+                    .job(application.getJob() != null
+                            ? ApplicationSummaryResponse.JobSummary.builder()
+                                    .id(application.getJob().getId())
+                                    .title(application.getJob().getTitle())
+                                    .company(application.getJob().getCompany())
+                                    .location(application.getJob().getLocation())
+                                    .build()
+                            : null)
+                    .resume(application.getResume() != null
+                            ? ApplicationSummaryResponse.ResumeSummary.builder()
+                                    .id(application.getResume().getId())
+                                    .fileName(application.getResume().getFileName())
+                                    .build()
+                            : null)
+                    .build())
+            .toList();
 }
 
 

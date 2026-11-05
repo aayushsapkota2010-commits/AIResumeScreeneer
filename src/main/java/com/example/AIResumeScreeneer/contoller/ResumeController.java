@@ -69,6 +69,7 @@ import com.example.AIResumeScreeneer.service.PdfReportService;
 import com.example.AIResumeScreeneer.service.PipelineService;
 import com.example.AIResumeScreeneer.service.ResumeFilterService;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -127,6 +128,9 @@ public class ResumeController {
         private final KanbanService kanbanService;
         private final ResumeChatService resumeChatService;
         private final NotificationService notificationService;
+
+    @Value("${app.upload.dir:}")
+    private String configuredUploadDir;
 
   @PostMapping("/upload")
 public String uploadResume(
@@ -462,7 +466,7 @@ try {
     return updatedResume;
 }
 
-@GetMapping("/pipeline")
+@GetMapping("/pipeline-stats")
 public PipelineResponse getPipeline() {
 
     return pipelineService.getPipelineStats();
@@ -541,6 +545,35 @@ public RoadmapResponse roadmap(
 }
 
 
+private Path resolveResumePath(String filePath) {
+
+    Path direct = Paths.get(filePath).toAbsolutePath().normalize();
+
+    if (Files.exists(direct) && Files.isRegularFile(direct)) {
+        return direct;
+    }
+
+    Path fileName = Paths.get(filePath).getFileName();
+
+    if (fileName == null) {
+        return direct;
+    }
+
+    String uploadDir =
+            (configuredUploadDir != null && !configuredUploadDir.isBlank())
+                    ? configuredUploadDir
+                    : System.getProperty("user.home")
+                            + java.io.File.separator
+                            + "resume-uploads";
+
+    Path fallback = Paths.get(uploadDir)
+            .toAbsolutePath()
+            .normalize()
+            .resolve(fileName);
+
+    return Files.exists(fallback) ? fallback : direct;
+}
+
 @GetMapping("/view/{id}")
 public ResponseEntity<Resource> viewResume(
         @PathVariable Long id) throws Exception {
@@ -557,7 +590,7 @@ public ResponseEntity<Resource> viewResume(
                 NOT_FOUND, "Resume file path is missing");
     }
 
-    Path path = Paths.get(filePath).toAbsolutePath().normalize();
+    Path path = resolveResumePath(filePath);
 
     System.out.println("Resume ID: " + id);
     System.out.println("Resume file path: " + path);
@@ -565,7 +598,8 @@ public ResponseEntity<Resource> viewResume(
 
     if (!Files.exists(path) || !Files.isRegularFile(path)) {
         throw new ResponseStatusException(
-                NOT_FOUND, "Resume PDF file does not exist");
+                NOT_FOUND,
+                "Resume file is no longer available on the server");
     }
 
     if (!Files.isReadable(path)) {

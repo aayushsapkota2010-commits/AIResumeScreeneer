@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.AIResumeScreeneer.dto.ApplicationSummaryResponse;
 import com.example.AIResumeScreeneer.dto.StatusUpdateRequest;
 import com.example.AIResumeScreeneer.entity.Application;
 import com.example.AIResumeScreeneer.entity.ApplicationStatus;
@@ -72,10 +73,10 @@ public class ApplicationController {
         );
     }
     @GetMapping("/pipeline")
-public ResponseEntity<List<Application>> getPipeline() {
+public ResponseEntity<List<ApplicationSummaryResponse>> getPipeline() {
 
     return ResponseEntity.ok(
-            applicationService.getAllApplications()
+            applicationService.getPipelineApplications()
     );
 }
 

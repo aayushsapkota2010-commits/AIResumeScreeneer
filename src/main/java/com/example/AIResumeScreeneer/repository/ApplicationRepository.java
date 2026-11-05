@@ -3,6 +3,7 @@ package com.example.AIResumeScreeneer.repository;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.AIResumeScreeneer.entity.Application;
@@ -26,6 +27,7 @@ public interface ApplicationRepository
     boolean existsByResumeId(Long resumeId);
 
     // Fetch all applications, including historical ones.
+    @EntityGraph(attributePaths = { "job", "resume" })
     List<Application> findAllByOrderByAppliedAtDesc();
 
     Application findFirstByResumeIdOrderByAppliedAtDesc(
@@ -33,19 +35,21 @@ public interface ApplicationRepository
     );
 
     // Fetch applications linked only to active resumes.
+    @EntityGraph(attributePaths = { "job", "resume" })
     List<Application> findByResumeDeletedFalseOrderByAppliedAtDesc();
 
-    
-List<Application>
-findByCandidateEmailAndResumeDeletedFalseOrderByAppliedAtDesc(
-        String candidateEmail);
+    @EntityGraph(attributePaths = { "job", "resume" })
+    List<Application>
+    findByCandidateEmailAndResumeDeletedFalseOrderByAppliedAtDesc(
+            String candidateEmail);
 
-List<Application>
-findByJobIdAndResumeDeletedFalseOrderByAppliedAtDesc(
-        Long jobId);
+    @EntityGraph(attributePaths = { "job", "resume" })
+    List<Application>
+    findByJobIdAndResumeDeletedFalseOrderByAppliedAtDesc(
+            Long jobId);
 
-        
-List<Application> findByResumeIdOrderByAppliedAtDesc(Long resumeId);
+    @EntityGraph(attributePaths = { "job", "resume" })
+    List<Application> findByResumeIdOrderByAppliedAtDesc(Long resumeId);
 
 
 }
