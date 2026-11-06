@@ -27,6 +27,18 @@ findTopByCandidateEmailOrderByIdDesc(
         List<Resume> findByStatus(
         CandidateStatus status);
 
+        List<Resume> findByDeletedFalseAndStatus(
+        CandidateStatus status);
+
+        List<Resume> findBySkillsContainingIgnoreCaseAndDeletedFalse(
+        String skill);
+
+        List<Resume>
+        findBySkillsContainingIgnoreCaseAndStatusAndAtsScoreGreaterThanEqualAndDeletedFalse(
+        String skill,
+        CandidateStatus status,
+        Integer atsScore);
+
         List<Resume> findByCandidateEmailOrderByUploadedAtDesc(String candidateEmail);
 
 

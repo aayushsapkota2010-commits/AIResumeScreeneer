@@ -19,23 +19,23 @@ public class KanbanService {
         return KanbanResponse.builder()
 
                 .applied(
-                        resumeRepository.findByStatus(
+                        resumeRepository.findByDeletedFalseAndStatus(
                                 CandidateStatus.APPLIED))
 
                 .shortlisted(
-                        resumeRepository.findByStatus(
+                        resumeRepository.findByDeletedFalseAndStatus(
                                 CandidateStatus.SHORTLISTED))
 
                 .interview(
-                        resumeRepository.findByStatus(
+                        resumeRepository.findByDeletedFalseAndStatus(
                                 CandidateStatus.INTERVIEW))
 
                 .selected(
-                        resumeRepository.findByStatus(
+                        resumeRepository.findByDeletedFalseAndStatus(
                                 CandidateStatus.SELECTED))
 
                 .rejected(
-                        resumeRepository.findByStatus(
+                        resumeRepository.findByDeletedFalseAndStatus(
                                 CandidateStatus.REJECTED))
 
                 .build();

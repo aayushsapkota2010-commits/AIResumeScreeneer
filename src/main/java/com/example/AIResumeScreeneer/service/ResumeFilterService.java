@@ -24,7 +24,7 @@ public class ResumeFilterService {
 
         List<Resume> resumes =
                 resumeRepository
-                        .findBySkillsContainingIgnoreCaseAndStatusAndAtsScoreGreaterThanEqual(
+                        .findBySkillsContainingIgnoreCaseAndStatusAndAtsScoreGreaterThanEqualAndDeletedFalse(
                                 skill,
                                 status,
                                 minAts);

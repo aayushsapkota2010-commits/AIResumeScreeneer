@@ -18,7 +18,8 @@ public class CandidateDashboardService {
 
         Application application =
                 applicationRepository
-                        .findByCandidateEmailOrderByAppliedAtDesc(email)
+                        .findByCandidateEmailAndResumeDeletedFalseOrderByAppliedAtDesc(
+                                email)
                         .stream()
                         .findFirst()
                         .orElse(null);

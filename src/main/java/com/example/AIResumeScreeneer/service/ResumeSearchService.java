@@ -21,7 +21,7 @@ public class ResumeSearchService {
         String skill) {
 
     return resumeRepository
-            .findBySkillsContainingIgnoreCase(skill)
+            .findBySkillsContainingIgnoreCaseAndDeletedFalse(skill)
             .stream()
             .map(resume ->
                     ResumeSearchResponse.builder()

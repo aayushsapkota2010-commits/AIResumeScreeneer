@@ -39,4 +39,6 @@ findByResumeCandidateEmailOrderByInterviewDateAscInterviewTimeAsc(
 );
 
 boolean existsByResumeId(Long resumeId);
+
+long countByResumeDeletedFalse();
 }

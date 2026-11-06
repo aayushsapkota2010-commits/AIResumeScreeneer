@@ -4,7 +4,6 @@ package com.example.AIResumeScreeneer.service;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,15 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.AIResumeScreeneer.entity.Application;
 import com.example.AIResumeScreeneer.entity.CandidateStatus;
 import com.example.AIResumeScreeneer.entity.Resume;
+import com.example.AIResumeScreeneer.entity.ResumeFile;
+import com.example.AIResumeScreeneer.repository.ResumeFileRepository;
 import com.example.AIResumeScreeneer.repository.ResumeRepository;
-
-import com.example.AIResumeScreeneer.repository.ActivityLogRepository;
-import com.example.AIResumeScreeneer.repository.ApplicationRepository;
-import com.example.AIResumeScreeneer.repository.RecruiterNoteRepository;
-import com.example.AIResumeScreeneer.repository.InterviewRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,13 +26,10 @@ import lombok.RequiredArgsConstructor;
 public class ResumeService {
 
     private final ResumeRepository resumeRepository;
+    private final ResumeFileRepository resumeFileRepository;
     private final NotificationService notificationService;
     private final AtsService atsService;
     private final ActivityLogService activityLogService;
-    private final ActivityLogRepository activityLogRepository;
-    private final RecruiterNoteRepository recruiterNoteRepository;
-    private final InterviewRepository interviewRepository;
-    private final ApplicationRepository applicationRepository;
 
     @Value("${app.upload.dir:}")
     private String configuredUploadDir;
@@ -63,6 +55,10 @@ public class ResumeService {
                         + file.getOriginalFilename();
 
         File destination = new File(directory, fileName);
+
+        // Read the bytes once so the same data can be written to disk and
+        // persisted in the database as a durable copy.
+        byte[] fileBytes = file.getBytes();
 
         file.transferTo(destination);
 
@@ -99,6 +95,18 @@ public class ResumeService {
 
         Resume savedResume = resumeRepository.save(resume);
 
+        // Persist a durable copy in the database. This is what allows the
+        // resume to remain viewable after a redeploy wipes the container
+        // filesystem (common on Railway and other cloud hosts).
+        resumeFileRepository.save(
+                ResumeFile.builder()
+                        .resumeId(savedResume.getId())
+                        .fileName(savedResume.getFileName())
+                        .contentType(savedResume.getContentType())
+                        .data(fileBytes)
+                        .build()
+        );
+
         activityLogService.saveLog(
                 "aayush@gmail.com",
                 "RESUME_UPLOADED",
@@ -127,10 +135,13 @@ public class ResumeService {
             throw new RuntimeException("Resume is already deleted");
         }
 
-        // Soft delete: preserve applications, interviews and history.
+        // Soft delete: preserve interviews and history. Applications that
+        // used this exact resume are filtered out of the active pipeline,
+        // but we deliberately do NOT repoint them at a different resume
+        // (that used to make the pipeline show data that did not belong to
+        // the resume that was actually used to apply).
         resume.setDeleted(true);
         resumeRepository.save(resume);
-        relinkApplicationsToActiveResume(resume);
 
         System.out.println("Resume soft-deleted. ID = " + id);
     }
@@ -163,27 +174,11 @@ public class ResumeService {
             throw new RuntimeException("Resume is already deleted");
         }
 
-        // Mark as deleted instead of physically removing the row.
+        // Mark as deleted instead of physically removing the row. We keep
+        // applications attached to the resume they were submitted with.
         resume.setDeleted(true);
         resumeRepository.save(resume);
-        relinkApplicationsToActiveResume(resume);
 
         System.out.println("Resume soft-deleted. ID = " + id);
-    }
-
-    private void relinkApplicationsToActiveResume(Resume deletedResume) {
-        if (deletedResume.getCandidateEmail() != null && !deletedResume.getCandidateEmail().isBlank()) {
-            List<Resume> remainingActive = resumeRepository
-                    .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(deletedResume.getCandidateEmail());
-            if (!remainingActive.isEmpty()) {
-                Resume activeResume = remainingActive.get(0);
-                List<Application> apps = applicationRepository
-                        .findByResumeIdOrderByAppliedAtDesc(deletedResume.getId());
-                for (Application app : apps) {
-                    app.setResume(activeResume);
-                    applicationRepository.save(app);
-                }
-            }
-        }
     }
 }

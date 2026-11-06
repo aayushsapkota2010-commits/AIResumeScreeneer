@@ -19,7 +19,7 @@ public class RankingService {
     public List<ResumeRankingResponse> getRanking() {
 
     List<Resume> resumes =
-            resumeRepository.findAll();
+            resumeRepository.findByDeletedFalse();
 
     resumes.sort((a, b) ->
             Integer.compare(

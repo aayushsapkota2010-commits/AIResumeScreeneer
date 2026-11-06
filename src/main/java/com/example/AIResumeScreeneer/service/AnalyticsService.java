@@ -27,9 +27,11 @@ public class AnalyticsService {
         // Count only active resumes.
         long totalCandidates = resumeRepository.countByDeletedFalse();
 
-        // Keep the existing job and interview counts.
+        // Keep jobs as-is, but exclude interviews that belong to a
+        // soft-deleted resume so they do not inflate active analytics.
         long totalJobs = jobRepository.count();
-        long totalInterviews = interviewRepository.count();
+        long totalInterviews =
+                interviewRepository.countByResumeDeletedFalse();
 
         long applied = resumeRepository.countByDeletedFalseAndStatus(
                 CandidateStatus.APPLIED);

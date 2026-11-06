@@ -1,16 +1,28 @@
 package com.example.AIResumeScreeneer.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    /*
+     * Email delivery is intentionally asynchronous.
+     *
+     * SMTP providers (especially on cloud hosts) can take many seconds or
+     * time out, and the recruiter should never have to wait for that while
+     * scheduling an interview. Failures are logged but never propagate to
+     * the caller, so the interview is still saved successfully.
+     */
+    @Async
     public void sendInterviewInvitation(
 
             String to,
@@ -31,13 +43,15 @@ public class EmailService {
 
     ) {
 
-        SimpleMailMessage message = new SimpleMailMessage();
+        try {
 
-        message.setTo(to);
+            SimpleMailMessage message = new SimpleMailMessage();
 
-        message.setSubject("Interview Invitation - AI Resume Screener");
+            message.setTo(to);
 
-        String body = """
+            message.setSubject("Interview Invitation - AI Resume Screener");
+
+            String body = """
 
 Hello %s,
 
@@ -80,10 +94,21 @@ AI Resume Screener Team
         location == null ? "-" : location
 );
 
-        message.setText(body);
+            message.setText(body);
 
-        mailSender.send(message);
+            mailSender.send(message);
+
+        } catch (Exception error) {
+
+            log.error(
+                    "Failed to send interview invitation to {}: {}",
+                    to,
+                    error.getMessage()
+            );
+        }
     }
+
+    @Async
     public void sendStatusUpdateEmail(
 
         String to,
@@ -92,13 +117,15 @@ AI Resume Screener Team
 
 ) {
 
-    SimpleMailMessage message = new SimpleMailMessage();
+    try {
 
-    message.setTo(to);
+        SimpleMailMessage message = new SimpleMailMessage();
 
-    message.setSubject("Application Status Updated");
+        message.setTo(to);
 
-    message.setText("""
+        message.setSubject("Application Status Updated");
+
+        message.setText("""
 
 Hello,
 
@@ -113,7 +140,15 @@ AI Resume Screener Team
 
 """.formatted(status));
 
-    mailSender.send(message);
+        mailSender.send(message);
 
+    } catch (Exception error) {
+
+        log.error(
+                "Failed to send status update email to {}: {}",
+                to,
+                error.getMessage()
+        );
+    }
 }
 }

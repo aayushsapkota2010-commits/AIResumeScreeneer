@@ -23,7 +23,7 @@ public class RecruiterService {
 
         List<Resume> resumes =
                 resumeRepository
-                        .findBySkillsContainingIgnoreCase(skill);
+                        .findBySkillsContainingIgnoreCaseAndDeletedFalse(skill);
 
         List<CandidateResponse> result =
                 new ArrayList<>();
@@ -46,7 +46,7 @@ public class RecruiterService {
     public List<CandidateResponse> getTopCandidates() {
 
     List<Resume> resumes =
-            resumeRepository.findAll();
+            resumeRepository.findByDeletedFalse();
 
     resumes.sort((a, b) ->
             Integer.compare(
@@ -93,7 +93,7 @@ public String shortlistCandidate(Long id) {
 public List<CandidateResponse> getShortlistedCandidates() {
 
     List<Resume> resumes =
-            resumeRepository.findAll();
+            resumeRepository.findByDeletedFalse();
 
     List<CandidateResponse> result =
             new ArrayList<>();
@@ -120,7 +120,7 @@ public List<CandidateResponse> getShortlistedCandidates() {
 public RecruiterDashboardResponse getDashboard() {
 
     List<Resume> resumes =
-            resumeRepository.findAll();
+            resumeRepository.findByDeletedFalse();
 
     int totalCandidates =
             resumes.size();

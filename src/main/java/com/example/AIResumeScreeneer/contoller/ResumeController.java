@@ -31,6 +31,7 @@ import com.example.AIResumeScreeneer.service.ResumeChatService;
 import com.example.AIResumeScreeneer.service.ResumeImprovementService;
 import com.example.AIResumeScreeneer.service.ResumeSearchService;
 import com.example.AIResumeScreeneer.service.ResumeService;
+import com.example.AIResumeScreeneer.repository.ResumeFileRepository;
 import com.example.AIResumeScreeneer.repository.ResumeRepository;
 import com.example.AIResumeScreeneer.dto.AIAnalysisResponse;
 import com.example.AIResumeScreeneer.dto.CandidateDashboardResponse;
@@ -61,6 +62,7 @@ import com.example.AIResumeScreeneer.entity.ActivityLog;
 import com.example.AIResumeScreeneer.entity.CandidateStatus;
 import com.example.AIResumeScreeneer.entity.RecruiterNote;
 import com.example.AIResumeScreeneer.entity.Resume;
+import com.example.AIResumeScreeneer.entity.ResumeFile;
 import lombok.RequiredArgsConstructor;
 import com.example.AIResumeScreeneer.service.DashboardService;
 import com.example.AIResumeScreeneer.service.EmailService;
@@ -70,7 +72,8 @@ import com.example.AIResumeScreeneer.service.PipelineService;
 import com.example.AIResumeScreeneer.service.ResumeFilterService;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -101,6 +104,7 @@ public class ResumeController {
     private final ResumeService resumeService;
     private final ApplicationService applicationService;
     private final ResumeRepository resumeRepository;
+    private final ResumeFileRepository resumeFileRepository;
     private final ResumeAnalysisService resumeAnalysisService;
     private final JobMatchingService jobMatchingService;
     private final KeywordGapService keywordGapService;
@@ -576,44 +580,120 @@ private Path resolveResumePath(String filePath) {
 
 @GetMapping("/view/{id}")
 public ResponseEntity<Resource> viewResume(
-        @PathVariable Long id) throws Exception {
+        @PathVariable Long id) {
 
     Resume resume = resumeRepository.findById(id)
             .orElseThrow(() ->
                     new ResponseStatusException(
                             NOT_FOUND, "Resume not found"));
 
+    // 1. Prefer the file on disk when it still exists.
     String filePath = resume.getFilePath();
 
-    if (filePath == null || filePath.isBlank()) {
-        throw new ResponseStatusException(
-                NOT_FOUND, "Resume file path is missing");
+    if (filePath != null && !filePath.isBlank()) {
+
+        Path path = resolveResumePath(filePath);
+
+        if (Files.exists(path)
+                && Files.isRegularFile(path)
+                && Files.isReadable(path)) {
+
+            return resumeFileResponse(
+                    new FileSystemResource(path),
+                    resume.getContentType(),
+                    path.getFileName().toString());
+        }
     }
 
-    Path path = resolveResumePath(filePath);
+    // 2. Fall back to the durable copy stored in the database. This keeps
+    // resumes viewable even after a redeploy clears the container disk.
+    ResumeFile storedFile = resumeFileRepository
+            .findById(id)
+            .orElse(null);
 
-    System.out.println("Resume ID: " + id);
-    System.out.println("Resume file path: " + path);
-    System.out.println("File exists: " + Files.exists(path));
+    if (storedFile != null
+            && storedFile.getData() != null
+            && storedFile.getData().length > 0) {
 
-    if (!Files.exists(path) || !Files.isRegularFile(path)) {
-        throw new ResponseStatusException(
-                NOT_FOUND,
-                "Resume file is no longer available on the server");
+        String contentType = storedFile.getContentType() != null
+                && !storedFile.getContentType().isBlank()
+                        ? storedFile.getContentType()
+                        : resume.getContentType();
+
+        String fileName = storedFile.getFileName() != null
+                && !storedFile.getFileName().isBlank()
+                        ? storedFile.getFileName()
+                        : resume.getFileName();
+
+        return resumeFileResponse(
+                new ByteArrayResource(storedFile.getData()),
+                contentType,
+                fileName);
     }
 
-    if (!Files.isReadable(path)) {
-        throw new ResponseStatusException(
-                INTERNAL_SERVER_ERROR, "Resume file is not readable");
+    // 3. Last resort for resumes uploaded before durable storage existed:
+    // rebuild a readable PDF from the text that was extracted at upload.
+    if (resume.getExtractedText() != null
+            && !resume.getExtractedText().isBlank()) {
+
+        String fileName = resume.getFileName() != null
+                && !resume.getFileName().isBlank()
+                        ? resume.getFileName()
+                        : "resume.pdf";
+
+        try {
+
+            byte[] pdf = pdfReportService
+                    .generateResumeContentPdf(resume);
+
+            return resumeFileResponse(
+                    new ByteArrayResource(pdf),
+                    MediaType.APPLICATION_PDF_VALUE,
+                    fileName);
+
+        } catch (Exception error) {
+
+            // If the PDF cannot be built (e.g. unsupported characters),
+            // serve the recovered text instead of failing the request.
+            return resumeFileResponse(
+                    new ByteArrayResource(
+                            resume.getExtractedText()
+                                    .getBytes(java.nio.charset.StandardCharsets.UTF_8)),
+                    MediaType.TEXT_PLAIN_VALUE,
+                    fileName + ".txt");
+        }
     }
 
-    Resource resource = new UrlResource(path.toUri());
+    throw new ResponseStatusException(
+            NOT_FOUND,
+            "Resume file is no longer available on the server");
+}
+
+private ResponseEntity<Resource> resumeFileResponse(
+        Resource resource,
+        String contentType,
+        String fileName) {
+
+    MediaType mediaType = MediaType.APPLICATION_PDF;
+
+    if (contentType != null && !contentType.isBlank()) {
+        try {
+            mediaType = MediaType.parseMediaType(contentType);
+        } catch (Exception ignored) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+    }
+
+    String safeFileName =
+            (fileName == null || fileName.isBlank())
+                    ? "resume"
+                    : fileName.replace("\"", "");
 
     return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_PDF)
+            .contentType(mediaType)
             .header(
                     HttpHeaders.CONTENT_DISPOSITION,
-                    "inline; filename=\"" + path.getFileName() + "\"")
+                    "inline; filename=\"" + safeFileName + "\"")
             .body(resource);
 }
 

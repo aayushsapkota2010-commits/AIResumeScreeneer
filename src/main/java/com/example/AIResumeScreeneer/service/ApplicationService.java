@@ -160,58 +160,13 @@ public class ApplicationService {
 @Transactional(readOnly = true)
 public List<Application> getAllApplications() {
 
-    List<Application> all =
-            applicationRepository.findAllByOrderByAppliedAtDesc();
-
-    List<Application> result = new java.util.ArrayList<>();
-    java.util.Map<String, Resume> activeResumeCache =
-            new java.util.HashMap<>();
-
-    for (Application application : all) {
-
-        Resume resume = application.getResume();
-
-        if (resume != null && !resume.isDeleted()) {
-            result.add(application);
-            continue;
-        }
-
-        String candidateEmail = application.getCandidateEmail();
-
-        if (candidateEmail == null || candidateEmail.isBlank()) {
-            continue;
-        }
-
-        Resume activeResume = activeResumeCache.computeIfAbsent(
-                candidateEmail,
-                email -> {
-                    List<Resume> activeResumes = resumeRepository
-                            .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(
-                                    email);
-                    return activeResumes.isEmpty()
-                            ? null
-                            : activeResumes.get(0);
-                });
-
-        if (activeResume != null) {
-            result.add(Application.builder()
-                    .id(application.getId())
-                    .job(application.getJob())
-                    .resume(activeResume)
-                    .candidateEmail(application.getCandidateEmail())
-                    .status(application.getStatus())
-                    .appliedAt(application.getAppliedAt())
-                    .updatedAt(application.getUpdatedAt())
-                    .atsScore(application.getAtsScore())
-                    .matchScore(application.getMatchScore())
-                    .matchedSkills(application.getMatchedSkills())
-                    .missingSkills(application.getMissingSkills())
-                    .recommendation(application.getRecommendation())
-                    .build());
-        }
-    }
-
-    return result;
+    // Only applications whose resume is still active are part of the
+    // live pipeline. We intentionally do not substitute another resume
+    // here: the resume shown must be the exact one used to apply, and a
+    // cancelled/deleted resume must disappear from the pipeline instead
+    // of being replaced by unrelated data.
+    return applicationRepository
+            .findByResumeDeletedFalseOrderByAppliedAtDesc();
 }
 
 @Transactional(readOnly = true)
@@ -329,25 +284,21 @@ public Application updateStatusByResumeId(
         Long resumeId,
         ApplicationStatus newStatus) {
 
+    Resume resume = resumeRepository
+            .findById(resumeId)
+            .orElse(null);
+
+    // Never touch applications that belong to a deleted resume.
+    if (resume == null || resume.isDeleted()) {
+        System.out.println(
+                "Skipping status sync for missing/deleted resume ID: "
+                        + resumeId);
+        return null;
+    }
+
     List<Application> applications =
             applicationRepository
                     .findByResumeIdOrderByAppliedAtDesc(resumeId);
-
-    // If no applications are found directly by resumeId, check by candidate email
-    if (applications.isEmpty()) {
-        Resume currentResume = resumeRepository.findById(resumeId).orElse(null);
-        if (currentResume != null && currentResume.getCandidateEmail() != null
-                && !currentResume.getCandidateEmail().isBlank()) {
-            List<Application> emailApps = applicationRepository
-                    .findByCandidateEmailOrderByAppliedAtDesc(currentResume.getCandidateEmail());
-            for (Application app : emailApps) {
-                if (app.getResume() == null || app.getResume().isDeleted()) {
-                    app.setResume(currentResume);
-                }
-            }
-            applications = emailApps;
-        }
-    }
 
     // A candidate may have a resume without any job applications.
     // Do not fail the resume status update in that case.
@@ -361,17 +312,6 @@ public Application updateStatusByResumeId(
     Application latestActiveApplication = null;
 
     for (Application application : applications) {
-
-        Resume linkedResume = application.getResume();
-
-        if (linkedResume == null || linkedResume.isDeleted()) {
-            Resume activeResume = resumeRepository.findById(resumeId).orElse(null);
-            if (activeResume != null && !activeResume.isDeleted()) {
-                application.setResume(activeResume);
-            } else {
-                continue;
-            }
-        }
 
         application.setStatus(newStatus);
         application.setUpdatedAt(now);
@@ -487,15 +427,6 @@ public Application updateStatusByResumeId(
         Resume resume = application.getResume();
 
         if (resume == null || resume.isDeleted()) {
-            if (application.getCandidateEmail() != null && !application.getCandidateEmail().isBlank()) {
-                List<Resume> active = resumeRepository
-                        .findByCandidateEmailAndDeletedFalseOrderByUploadedAtDesc(application.getCandidateEmail());
-                if (!active.isEmpty()) {
-                    application.setResume(active.get(0));
-                    applicationRepository.save(application);
-                    return;
-                }
-            }
             throw new RuntimeException(
                     "This application is linked to a deleted resume");
         }
